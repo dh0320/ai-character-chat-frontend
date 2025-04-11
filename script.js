@@ -148,28 +148,28 @@ function sendMessage() {
     })
     .then(response => {
         if (!response.ok) {
+            // ▼▼▼ ★★★ 403 の処理をシンプル化 ★★★ ▼▼▼
             if (response.status === 403) {
-                 return response.json().then(errData => {
-                      if (errData && errData.code === 'LIMIT_REACHED') {
-                           throw new Error(ERROR_MESSAGES.LIMIT_REACHED);
-                      }
-                      throw new Error(ERROR_MESSAGES.INVALID_ID);
-                 }).catch(() => {
-                      throw new Error(ERROR_MESSAGES.INVALID_ID); // Fallback for 403 if JSON fails
-                 });
+                // 403 が返ってきたら、無条件で上限到達エラーとして扱う
+                throw new Error(ERROR_MESSAGES.LIMIT_REACHED);
             }
+            // ▲▲▲ ★★★ 403 の処理をシンプル化 ★★★ ▲▲▲
+    
+            // 404 Not Found はキャラクターが見つからない場合
             if (response.status === 404) {
                  return response.json().then(errData => {
+                     // エラーメッセージがあれば使う、なければデフォルト
                      throw new Error(errData.error || ERROR_MESSAGES.INVALID_ID);
                  }).catch(() => { throw new Error(ERROR_MESSAGES.INVALID_ID); });
             }
-            // Handle other non-ok statuses
+            // その他のHTTPエラー (500 Internal Server Error など)
             return response.json().then(errData => {
                  const errorMsg = errData.error || `サーバーエラーが発生しました (HTTP ${response.status})`;
                  throw new Error(errorMsg);
+            // ネットワークエラー等でJSONが読めない場合はHTTPステータスエラー
             }).catch(() => { throw new Error(`HTTP error! status: ${response.status}`); });
         }
-        return response.json(); // Success path
+        return response.json(); // 正常なレスポンス (200 OK)
     })
     .then(data => {
         if (data && data.reply) {
@@ -179,25 +179,20 @@ function sendMessage() {
         }
     })
     .catch(error => {
-        // ▼▼▼ ★★★ デバッグログを追加 ★★★ ▼▼▼
+        // ▼▼▼ デバッグログは不要であれば削除してもOK ▼▼▼
         console.error('>>> Caught Error Object:', error);
         console.error('>>> Caught Error Message:', error.message);
-        // ▲▲▲ ★★★ デバッグログを追加 ★★★ ▲▲▲
-
-        console.error('Error sending message or processing response:', error); // Keep original log too
+        // ▲▲▲ デバッグログ ▲▲▲
+    
+        console.error('Error sending message or processing response:', error);
         let displayError = ERROR_MESSAGES.GENERAL;
         if (Object.values(ERROR_MESSAGES).includes(error.message)) {
-             displayError = error.message;
+             displayError = error.message; // LIMIT_REACHED もここで拾われる
         } else if (error.message.includes('HTTP') || error.message.includes('Failed to fetch')) {
              displayError = ERROR_MESSAGES.NETWORK;
         }
         appendChatError(displayError);
     })
-    .finally(() => {
-        removeTypingIndicator();
-        setAiResponding(false);
-    });
-}
 
 // --- State Management (Chat) ---
 function setAiResponding(isResponding) {
