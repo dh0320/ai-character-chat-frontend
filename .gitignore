@@ -1,9 +1,9 @@
 # Service Account Key (絶対にアップロードしない！)
-aillm-456406-941e7ee1f1a2.json # あなたの実際のキーファイル名に置き換える
+aillm-456406-941e7ee1f1a2.json
 
-# Backend files (今回は含めない)
-main.py
-requirements.txt
+# Backend files (GCFデプロイには含める)
+# main.py                 # <- コメントアウト
+# requirements.txt        # <- コメントアウト
 
 # Text notes
 *.txt
