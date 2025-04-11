@@ -193,6 +193,11 @@ function sendMessage() {
         }
         appendChatError(displayError);
     })
+    .finally(() => {
+        removeTypingIndicator();
+        setAiResponding(false);
+    });
+}
 
 // --- State Management (Chat) ---
 function setAiResponding(isResponding) {
