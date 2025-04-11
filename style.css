@@ -1,0 +1,444 @@
+/* style.css (AIアバターアイコン表示修正済み) */
+
+/* --- CSS Variables --- */
+:root {
+    --body-bg: #f0f2f5;
+    --chat-bg: #ffffff;
+    --chat-container-max-width: 800px; /* Max width on larger screens */
+    --header-height: 60px;
+    --footer-height: 70px;
+    --ai-bubble-bg: #e9e9eb;
+    --ai-bubble-text: #050505;
+    --user-bubble-bg: #0084ff;
+    --user-bubble-text: #ffffff;
+    --system-bubble-bg: #fffbe6;
+    --system-bubble-text: #8a6d3b;
+    --error-bubble-bg: #f8d7da;
+    --error-bubble-text: #721c24;
+    --input-bg: #ffffff;
+    --input-text: #050505;
+    --placeholder-text: #65676b;
+    --timestamp-text: #65676b;
+    --link-color: #0064d1;
+    --border-color: #ced0d4;
+    --icon-placeholder-bg: #cccccc; /* Default icon bg */
+    --typing-indicator-dot-color: #8e8e8e;
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --base-font-size: 1rem; /* 16px */
+    --small-font-size: 0.75rem; /* 12px */
+    --message-max-width: 85%;
+    --message-animate-duration: 0.3s;
+}
+
+/* --- Basic Reset & Body --- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: var(--base-font-size);
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--body-bg);
+    /* display: flex; Flex is handled by main-container or specific views */
+    /* justify-content: center; */
+    /* align-items: center; */
+    min-height: 100vh;
+    padding: 0;
+    /* overflow: hidden; May hide scrollbars needed */
+}
+
+.main-container {
+     width: 100%;
+     /* Add padding or max-width if needed for overall page structure */
+}
+
+
+/* --- View Control --- */
+.hidden {
+    display: none !important;
+}
+
+/* --- Profile View Styling --- */
+.view-section { /* Common style for profile and potential future views */
+    width: 100%;
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+#profile-view { /* Specific styles for profile view if needed */
+    text-align: center;
+}
+
+.profile-header {
+    margin-bottom: 1.5rem;
+}
+
+.profile-icon {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1rem;
+    border: 3px solid #eee;
+    background-color: var(--icon-placeholder-bg); /* Loading bg */
+}
+
+.profile-name {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.profile-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 2rem;
+    white-space: pre-wrap;
+    text-align: left;
+}
+
+.start-chat-button {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: var(--user-bubble-bg);
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.start-chat-button:hover {
+    background-color: var(--link-color);
+}
+.start-chat-button:active {
+    transform: scale(0.98);
+}
+.start-chat-button:disabled {
+    background-color: #b0c4de;
+    cursor: not-allowed;
+}
+
+
+/* --- Chat View Structure --- */
+#chat-view { /* Initially hidden, shown by JS */
+    width: 100%;
+    height: 100vh;
+    display: flex; /* Use flex to make chat-container fill height */
+    flex-direction: column; /* Make chat-container the direct child */
+    margin: 0 auto; /* Center if max-width is set */
+    max-width: var(--chat-container-max-width); /* Apply max-width */
+    background-color: var(--chat-bg); /* Background for chat view */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 0; /* Full height likely doesn't need radius */
+}
+
+/* Chat Container within Chat View */
+.chat-container {
+    width: 100%;
+    height: 100%; /* Fill #chat-view */
+    background-color: inherit; /* Inherit from #chat-view */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Important */
+}
+
+.chat-header {
+    height: var(--header-height);
+    background-color: var(--user-bubble-bg);
+    color: var(--user-bubble-text);
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.chat-header__title {
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.chat-history {
+    flex-grow: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    /* background-color: var(--chat-bg); Removed, inherit from container */
+}
+
+.chat-footer {
+    height: var(--footer-height);
+    background-color: var(--body-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    flex-shrink: 0;
+}
+
+.chat-input-form {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.chat-input-form__input {
+    flex-grow: 1;
+    height: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    font-size: 1em;
+    margin-right: 0.75rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+.chat-input-form__input:focus,
+.chat-input-form__input:focus-visible {
+    border-color: var(--user-bubble-bg);
+    box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.3);
+}
+.chat-input-form__input::placeholder {
+    color: var(--placeholder-text);
+}
+
+.chat-input-form__button {
+    background-color: var(--user-bubble-bg);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.chat-input-form__button:hover {
+    background-color: var(--link-color);
+}
+.chat-input-form__button:active {
+    transform: scale(0.95);
+}
+.chat-input-form__button:disabled {
+    background-color: #b0c4de;
+    cursor: not-allowed;
+}
+.chat-input-form__button svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+/* --- Message Styling --- */
+.message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    max-width: var(--message-max-width);
+    opacity: 0;
+    animation: fadeIn var(--message-animate-duration) ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.message__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--icon-placeholder-bg); /* Default background */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat; /* Prevent tiling */
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* ▼▼▼ ★AIとUserの個別 background-image 指定を削除 ▼▼▼ */
+/* .message--ai .message__icon { ... } */
+/* .message--user .message__icon { ... } */
+/* ▲▲▲ ★削除 ▲▲▲ */
+
+/* ユーザーアイコンは必要ならCSSで設定 (例) */
+ .message--user .message__icon {
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231e88e5"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
+      background-color: transparent;
+ }
+
+/* エラーアイコン */
+.message--error .message__icon {
+     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c62828"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>');
+     background-color: transparent;
+}
+
+
+.message__content {
+    margin: 0 0.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.message__bubble {
+    padding: 0.6rem 0.9rem;
+    border-radius: 18px;
+    word-wrap: break-word;
+    line-height: 1.45;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+.message__bubble a {
+    color: var(--link-color);
+    text-decoration: underline;
+}
+.message__bubble a:hover {
+    text-decoration: none;
+}
+
+.message__timestamp {
+    font-size: var(--small-font-size);
+    color: var(--timestamp-text);
+    margin-top: 0.25rem;
+    align-self: flex-start;
+}
+
+/* Message Modifiers (Layout and Bubble Color) */
+.message--ai {
+    margin-right: auto;
+}
+.message--ai .message__bubble {
+    background-color: var(--ai-bubble-bg);
+    color: var(--ai-bubble-text);
+    border-bottom-left-radius: 5px;
+}
+.message--ai .message__timestamp {
+    margin-left: 0.2rem;
+}
+
+.message--user {
+    flex-direction: row-reverse;
+    margin-left: auto;
+}
+.message--user .message__content {
+    align-items: flex-end;
+}
+.message--user .message__bubble {
+    background-color: var(--user-bubble-bg);
+    color: var(--user-bubble-text);
+    border-bottom-right-radius: 5px;
+}
+.message--user .message__bubble a { color: inherit; font-weight: 500; }
+.message--user .message__timestamp {
+    margin-right: 0.2rem;
+    align-self: flex-end;
+}
+
+.message--error .message__bubble { /* Error bubble style */
+    background-color: var(--error-bubble-bg);
+    color: var(--error-text);
+    border: 1px solid var(--error-text);
+    font-weight: 500;
+}
+.message--error .message__timestamp { /* Hide timestamp for errors */
+     display: none;
+}
+
+/* Error message in profile view */
+#profile-error.error-message {
+    /* Inherits .error-message, add specific styles if needed */
+     margin-top: 1.5rem;
+}
+
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 0.9rem;
+}
+.typing-indicator__dot {
+    height: 8px;
+    width: 8px;
+    background-color: var(--typing-indicator-dot-color);
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 2px;
+    animation: bounce 1.3s infinite ease-in-out both;
+}
+.typing-indicator__dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator__dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
+}
+
+/* --- Scrollbar Styling (Webkit) --- */
+.chat-history::-webkit-scrollbar {
+    width: 8px;
+}
+.chat-history::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+.chat-history::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+.chat-history::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* --- Responsive Design --- */
+@media (min-width: 768px) {
+    body {
+        padding: 2rem;
+    }
+    /* Profile view on desktop */
+    #profile-view.view-section {
+         margin-top: 4rem; /* Add more top margin */
+    }
+
+    /* Chat view on desktop */
+    #chat-view {
+        /* max-width: var(--chat-container-max-width); Already set */
+        height: calc(100vh - 4rem);
+        border-radius: 8px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+    }
+    /* Message width on desktop */
+    .message {
+        max-width: 75%;
+    }
+}
+
+/* Adjustments for very small screens if needed */
+@media (max-width: 360px) {
+     :root {
+         --base-font-size: 0.9rem; /* Slightly smaller font */
+         --header-height: 50px;
+         --footer-height: 60px;
+     }
+     .profile-name { font-size: 1.5rem; }
+     .start-chat-button { font-size: 1rem; padding: 0.7rem 1.5rem;}
+     .chat-input-form__input { padding: 0.4rem 0.8rem; font-size: 0.9rem;}
+     .chat-input-form__button { width: 40px; height: 40px; }
+}

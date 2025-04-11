@@ -1,0 +1,14 @@
+# Service Account Key (絶対にアップロードしない！)
+aillm-456406-941e7ee1f1a2.json # あなたの実際のキーファイル名に置き換える
+
+# Backend files (今回は含めない)
+main.py
+requirements.txt
+
+# Text notes
+*.txt
+
+# Other common ignores
+node_modules/
+.DS_Store
+*.log
