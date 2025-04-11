@@ -6,7 +6,7 @@ aillm-456406-941e7ee1f1a2.json
 # requirements.txt        # <- コメントアウト
 
 # Text notes
-*.txt
+#*.txt
 
 # Other common ignores
 node_modules/

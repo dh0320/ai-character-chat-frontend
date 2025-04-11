@@ -1,0 +1,6 @@
+functions-framework==3.*
+requests
+google-generativeai>=0.3 # Gemini API (google-ai) ライブラリ
+gspread>=5.0.0
+google-auth>=2.0.0
+google-auth-oauthlib>=0.5.0 # gspreadの認証で必要になる場合がある
