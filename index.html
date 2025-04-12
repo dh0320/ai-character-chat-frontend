@@ -15,7 +15,7 @@
     <div class="container">
 
         <section id="profile-view" class="view-section profile">
-             <div class="profile__card">
+             <div class="profile__card"> {/* このクラスはCSSで特に指定していませんが、構造のために残してあります */}
                  <header class="profile__header">
                      <img id="char-icon" src="placeholder-icon.png" alt="キャラクターアイコン" class="profile__icon">
                      <h1 id="char-name" class="profile__name">読み込み中...</h1>
@@ -24,29 +24,32 @@
                      <p id="char-profile" class="profile__text">キャラクター情報を読み込んでいます...</p>
                  </div>
                  <footer class="profile__footer">
-                     <button id="start-chat-button" class="profile__button">このキャラクターと話す</button>
-                     <div id="profile-error" class="error-message" style="display: none;"></div>
+                     <button id="start-chat-button" class="profile__button" disabled>このキャラクターと話す</button> {/* 最初は無効化 */}
+                     <div id="profile-error" class="error-message hidden"></div> {/* 最初は非表示 */}
                  </footer>
              </div>
         </section>
         <section id="chat-view" class="view-section chat hidden"> <div class="chat__container">
                  <header class="chat__header">
                      <h1 id="chat-header-title" class="chat__title">AIキャラクター</h1>
-                     </header>
+                     {/* オプション: プロフィールに戻るボタンなど */}
+                     {/* <button id="back-button" aria-label="戻る">&larr;</button> */}
+                 </header>
                  <main class="chat__history" id="chat-history" aria-live="polite">
                      </main>
                  <footer class="chat__footer">
                      <form class="chat__input-form" id="chat-input-form">
-                         <input type="text" class="chat__input" id="user-input" placeholder="メッセージを入力..." autocomplete="off" aria-label="メッセージ入力欄">
-                         <button type="submit" class="chat__send-button" id="send-button" aria-label="送信">
-                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                         <input type="text" class="chat__input" id="user-input" placeholder="メッセージを入力..." autocomplete="off" aria-label="メッセージ入力欄" disabled> {/* 最初は無効化 */}
+                         <button type="submit" class="chat__send-button" id="send-button" aria-label="送信" disabled> {/* 最初は無効化 */}
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"> {/* アイコンサイズ調整 */}
                                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                              </svg>
                          </button>
                      </form>
                  </footer>
             </div>
-             </section>
+             <div id="chat-error" class="error-message hidden"></div>
+        </section>
         </div><script src="script.js" defer></script>
 </body>
 </html>
