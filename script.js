@@ -124,7 +124,6 @@ function startChat() {
             } else {
                 const lastMessage = chatHistory.lastElementChild;
                 if (lastMessage) {
-                    // Scroll last message into view instantly on initial load
                     lastMessage.scrollIntoView({ behavior: 'auto', block: 'end' });
                 }
             }
@@ -226,8 +225,8 @@ function appendMessage(senderType, text) {
     fragment.appendChild(messageRow);
     chatHistory.appendChild(fragment);
 
-    // Use scrollIntoView to bring the new message into view smoothly
-    messageRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    // Use scrollIntoView with behavior: 'auto'
+    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' }); // ★ Changed to 'auto'
 }
 
 function createMessageRowElement(senderType, messageId) {
@@ -279,8 +278,8 @@ function showTypingIndicator() {
     messageRow.appendChild(icon); messageRow.appendChild(content);
     fragment.appendChild(messageRow); chatHistory.appendChild(fragment);
 
-    // Use scrollIntoView for the typing indicator as well
-    messageRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    // Use scrollIntoView with behavior: 'auto'
+    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' }); // ★ Changed to 'auto'
 }
 
 function removeTypingIndicator() {
