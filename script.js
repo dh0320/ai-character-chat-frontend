@@ -1,4 +1,4 @@
-// script.js (会話上限エラー処理 + デバッグログ追加 + 初期スクロール追加)
+// script.js (自動スクロール改善版)
 
 // --- Constants and Configuration ---
 const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api'; // 確認済みのURL
@@ -119,7 +119,7 @@ function startChat() {
     setTimeout(() => {
         if (chatHistory && chatHistory.children.length === 0) { appendMessage('ai', WELCOME_MESSAGE); }
     }, 100);
-    // ★ Scroll to bottom immediately when chat view is shown (for existing history)
+    // Scroll to bottom immediately when chat view is shown (for existing history)
     scrollToBottom();
 }
 
@@ -208,7 +208,6 @@ function appendMessage(senderType, text) {
         icon.style.backgroundImage = `url('${characterIconUrl}')`;
         icon.style.backgroundColor = 'transparent';
     } else {
-        // Reset icon styles for user or error messages
         icon.style.backgroundImage = '';
         icon.style.backgroundColor = '';
     }
@@ -231,7 +230,6 @@ function createMessageRowElement(senderType, messageId) {
 function createIconElement(senderType) {
     const element = document.createElement('div');
     element.className = 'message__icon';
-    // Icon background image is set in appendMessage
     return element;
 }
 
@@ -241,7 +239,6 @@ function createMessageContentElement(senderType, text) {
     const bubble = document.createElement('div');
     bubble.className = 'message__bubble';
     const linkRegex = /\[([^\]]+)]\((https?:\/\/[^\s)]+)\)/g;
-    // Render link only if not an error message and contains the pattern
     if (senderType !== 'error' && linkRegex.test(text)) {
         bubble.innerHTML = text.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     } else {
@@ -251,7 +248,6 @@ function createMessageContentElement(senderType, text) {
     timestamp.className = 'message__timestamp';
     timestamp.textContent = getCurrentTime();
     content.appendChild(bubble);
-    // Only add timestamp for non-error messages
     if (senderType !== 'error') { content.appendChild(timestamp); }
     return content;
 }
@@ -299,12 +295,18 @@ function getCurrentTime() {
     return new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+/**
+ * Scrolls the chat history to the bottom.
+ * Uses setTimeout with 0 delay to ensure scrolling happens after DOM update.
+ */
 function scrollToBottom() {
     if(!chatHistory) return;
-    // Use requestAnimationFrame to ensure DOM update is complete before scrolling
-    requestAnimationFrame(() => {
+    // ★ Use setTimeout to defer execution slightly, allowing DOM to update
+    setTimeout(() => {
         chatHistory.scrollTop = chatHistory.scrollHeight;
-    });
+        // Optional: Add a smooth scroll behavior (might conflict with CSS scroll-behavior)
+        // chatHistory.scrollTo({ top: chatHistory.scrollHeight, behavior: 'smooth' });
+    }, 0);
 }
 
 // --- Function to get Character ID from URL ---
