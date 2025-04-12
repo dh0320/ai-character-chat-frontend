@@ -3,29 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIキャラクターチャット</title> <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="main-container">
+    <title>AIキャラクターチャット</title>
 
-        <div id="profile-view" class="view-section">
-             <header class="profile-header">
-                 <img id="char-icon" src="placeholder-icon.png" alt="キャラクターアイコン" class="profile-icon">
-                 <h1 id="char-name" class="profile-name">読み込み中...</h1>
-             </header>
-             <p id="char-profile" class="profile-text">キャラクター情報を読み込んでいます...</p>
-             <button id="start-chat-button" class="start-chat-button">このキャラクターと話す</button>
-             <div id="profile-error" class="error-message" style="display: none;"></div> </div>
-        <div id="chat-view" class="view-section hidden"> <div class="chat-container">
-                 <header class="chat-header">
-                      <h1 id="chat-header-title" class="chat-header__title">AIキャラクター</h1>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+    </head>
+<body>
+    <div class="container">
+
+        <section id="profile-view" class="view-section profile">
+             <div class="profile__card">
+                 <header class="profile__header">
+                     <img id="char-icon" src="placeholder-icon.png" alt="キャラクターアイコン" class="profile__icon">
+                     <h1 id="char-name" class="profile__name">読み込み中...</h1>
                  </header>
-                 <main class="chat-history" id="chat-history" aria-live="polite">
+                 <div class="profile__body">
+                     <p id="char-profile" class="profile__text">キャラクター情報を読み込んでいます...</p>
+                 </div>
+                 <footer class="profile__footer">
+                     <button id="start-chat-button" class="profile__button">このキャラクターと話す</button>
+                     <div id="profile-error" class="error-message" style="display: none;"></div>
+                 </footer>
+             </div>
+        </section>
+        <section id="chat-view" class="view-section chat hidden"> <div class="chat__container">
+                 <header class="chat__header">
+                     <h1 id="chat-header-title" class="chat__title">AIキャラクター</h1>
+                     </header>
+                 <main class="chat__history" id="chat-history" aria-live="polite">
                      </main>
-                 <footer class="chat-footer">
-                     <form class="chat-input-form" id="chat-input-form">
-                         <input type="text" class="chat-input-form__input" id="user-input" placeholder="メッセージを入力..." autocomplete="off" aria-label="メッセージ入力欄">
-                         <button type="submit" class="chat-input-form__button" id="send-button" aria-label="送信">
+                 <footer class="chat__footer">
+                     <form class="chat__input-form" id="chat-input-form">
+                         <input type="text" class="chat__input" id="user-input" placeholder="メッセージを入力..." autocomplete="off" aria-label="メッセージ入力欄">
+                         <button type="submit" class="chat__send-button" id="send-button" aria-label="送信">
                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
                                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                              </svg>
@@ -33,7 +46,7 @@
                      </form>
                  </footer>
             </div>
-             <div id="chat-error" class="error-message" style="display: none;"></div> </div>
+             </section>
         </div><script src="script.js" defer></script>
 </body>
 </html>
