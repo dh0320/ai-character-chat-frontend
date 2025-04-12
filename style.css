@@ -63,7 +63,7 @@
     --effective-header-height: var(--header-height);
     --effective-footer-height: var(--footer-height);
     /* ★ スクロールパディング調整用オフセット */
-    --scroll-padding-offset: 3.5rem; /* 隠れる行数に応じて調整 (例: 1.5rem ~ 2.5rem) */
+    --scroll-padding-offset: 5.0rem; /* 隠れる行数に応じて調整 (例: 1.5rem ~ 2.5rem) */
 }
 
 /* スマホ用の変数上書き */
