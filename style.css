@@ -1,4 +1,4 @@
-/* style.css (ミニマルクリーン + 青アクセント) */
+/* style.css (ミニマルクリーン + 青アクセント - レイアウト修正版) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -62,14 +62,11 @@
     /* ヘッダー/フッターの高さを取得 (スマホ用調整も考慮) */
     --effective-header-height: var(--header-height);
     --effective-footer-height: var(--footer-height);
-    /* ★ スクロールパディング調整用オフセット */
-    --scroll-padding-offset: 3.5rem; /* ← 必要に応じて調整 */
 }
 
 /* スマホ用の変数上書き */
 @media (max-width: 480px) {
     :root {
-        /* --font-size-base: 0.95rem; */
         --header-height: 55px;
         --footer-height: 65px;
         --effective-header-height: 55px;
@@ -119,7 +116,7 @@ body {
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-md);
     overflow: hidden;
-    position: relative;
+    position: relative; /* ★ For absolute positioning children */
 }
 
 /* --- Profile View Styling --- */
@@ -135,7 +132,6 @@ body {
     padding-bottom: var(--spacing-lg);
     scroll-behavior: smooth;
 }
-/* ... (rest of profile styles) ... */
 .profile__header { margin-bottom: var(--spacing-lg); }
 .profile__icon { width: 150px; height: 150px; border-radius: var(--border-radius-circle); object-fit: cover; margin: 0 auto var(--spacing-lg) auto; border: 4px solid var(--color-surface); box-shadow: var(--shadow-md); background-color: var(--color-icon-placeholder); }
 .profile__name { font-size: 1.75rem; font-weight: var(--font-weight-bold); margin-bottom: var(--spacing-sm); color: var(--color-text-primary); }
@@ -153,7 +149,7 @@ body {
     padding: 0; margin: 0; display: block; border-radius: inherit; box-shadow: inherit; overflow: hidden; height: 100%;
 }
 .chat__container {
-    width: 100%; height: 100%; background-color: var(--color-surface); overflow: hidden; border-radius: inherit; position: relative;
+    width: 100%; height: 100%; background-color: var(--color-surface); overflow: hidden; border-radius: inherit; position: relative; /* ★ Positioning context for chat__history */
 }
 
 /* Default (Desktop) Styles - Flexbox layout */
@@ -162,10 +158,17 @@ body {
 }
 .chat__title { font-size: 1.1rem; font-weight: var(--font-weight-medium); }
 .chat__history {
-    flex-grow: 1; padding: var(--spacing-md) var(--spacing-lg); padding-bottom: var(--spacing-md); overflow-y: auto;
-    scroll-behavior: auto; /* ★ behavior: auto */
-    -webkit-overflow-scrolling: touch; min-height: 0; background-color: var(--color-surface);
-    scroll-padding-bottom: calc(var(--spacing-md) + 1rem);
+    position: static; /* ★ Desktop: Default position */
+    height: auto;     /* ★ Desktop: Height by flex */
+    flex-grow: 1;
+    padding: var(--spacing-md) var(--spacing-lg);
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    background-color: var(--color-surface);
+    /* Desktop scroll padding (optional) */
+    scroll-padding-bottom: var(--spacing-md);
 }
 .chat__footer {
     height: var(--footer-height); background-color: #f1f3f5; border-top: 1px solid var(--color-border); padding: var(--spacing-sm) var(--spacing-md); flex-shrink: 0; display: flex; align-items: center; z-index: 5; position: static;
@@ -174,15 +177,42 @@ body {
 /* --- Mobile Specific Layout (LINE style) --- */
 @media (max-width: 767px) {
     .view-section { border-radius: 0; box-shadow: none; max-width: 100%; }
-    .chat__container { border-radius: 0; }
-    .chat__header { position: fixed; top: 0; left: 0; right: 0; width: 100%; height: var(--effective-header-height); z-index: 100; box-shadow: var(--shadow-sm); flex-shrink: unset; }
-    .chat__history {
-        height: 100%; padding-top: var(--effective-header-height); padding-bottom: var(--spacing-sm); padding-left: var(--spacing-md); padding-right: var(--spacing-md); box-sizing: border-box; overflow-y: auto; flex-grow: unset; min-height: unset;
-        scroll-padding-bottom: calc(var(--effective-footer-height) + var(--scroll-padding-offset));
-        scroll-behavior: auto; /* ★ behavior: auto */
+    .chat__container { border-radius: 0; } /* ★ Container needs position relative for absolute child */
+
+    .chat__header {
+        position: fixed; /* ★ Mobile: Fix to top */
+        top: 0; left: 0; right: 0; width: 100%;
+        height: var(--effective-header-height);
+        z-index: 100; box-shadow: var(--shadow-sm); flex-shrink: unset;
     }
-    .chat__footer { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: var(--effective-footer-height); z-index: 100; border-top: 1px solid var(--color-border); background-color: #f1f3f5; flex-shrink: unset; }
+
+    .chat__history {
+        position: absolute; /* ★ Mobile: Use absolute positioning */
+        top: var(--effective-header-height);    /* ★ Position below header */
+        bottom: var(--effective-footer-height); /* ★ Position above footer */
+        left: 0;         /* ★ Full width */
+        right: 0;        /* ★ Full width */
+        height: auto;    /* ★ Height is determined by top/bottom */
+        padding: var(--spacing-md); /* ★ Adjust padding as needed */
+        box-sizing: border-box;
+        overflow-y: auto; /* ★ Keep scroll */
+        scroll-behavior: smooth; /* ★ Keep smooth scroll */
+        -webkit-overflow-scrolling: touch;
+        background-color: var(--color-surface); /* Ensure background */
+        /* Remove properties not needed for absolute positioning */
+        flex-grow: unset;
+        min-height: unset;
+        scroll-padding-bottom: 0; /* ★ No longer needed */
+    }
+
+    .chat__footer {
+        position: fixed; /* ★ Mobile: Fix to bottom */
+        bottom: 0; left: 0; right: 0; width: 100%;
+        height: var(--effective-footer-height);
+        z-index: 100; border-top: 1px solid var(--color-border); background-color: #f1f3f5; flex-shrink: unset;
+    }
 }
+
 
 /* --- Shared Input/Button Styles --- */
 .chat__input-form { display: flex; align-items: center; width: 100%; height: 100%; }
@@ -240,9 +270,20 @@ body {
 @media (min-width: 768px) {
     .container { padding: var(--spacing-lg); }
     .view-section { border-radius: var(--border-radius-lg); box-shadow: var(--shadow-lg); height: 90vh; max-height: 800px; }
-    .chat { display: flex; flex-direction: column; }
-    .chat__container { display: flex; flex-direction: column; border-radius: var(--border-radius-lg); }
-    .chat__history { scroll-behavior: auto; /* ★ behavior: auto */ scroll-padding-bottom: calc(var(--spacing-md) + 1rem); }
+    .chat { display: flex; flex-direction: column; } /* ★ Re-apply flex for desktop */
+    .chat__container { display: flex; flex-direction: column; border-radius: var(--border-radius-lg); } /* ★ Re-apply flex for desktop */
+
+    /* ★ Reset chat__history styles for desktop flex layout */
+    .chat__history {
+        position: static;
+        top: auto; bottom: auto; left: auto; right: auto;
+        height: auto; width: auto;
+        flex-grow: 1;
+        min-height: 0;
+        padding: var(--spacing-md) var(--spacing-lg); /* Restore original padding */
+        scroll-padding-bottom: var(--spacing-md); /* Desktop scroll padding */
+        scroll-behavior: smooth;
+    }
     .message { max-width: 70%; }
     /* .chat__input { font-size: 0.95rem; } */
 }
@@ -256,5 +297,8 @@ body {
     .profile__button { font-size: 1rem; padding: 0.7rem 1.8rem;}
     .chat__input { font-size: 1rem; padding: var(--spacing-sm) var(--spacing-md); }
     .chat__send-button { width: 44px; height: 44px; }
-    .chat__history { padding-left: var(--spacing-sm); padding-right: var(--spacing-sm); padding-bottom: var(--spacing-xs); }
+    .chat__history {
+        /* Mobile padding for absolute positioning */
+        padding: var(--spacing-sm); /* Adjust padding as needed */
+    }
 }
