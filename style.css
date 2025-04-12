@@ -67,11 +67,11 @@
 /* スマホ用の変数上書き */
 @media (max-width: 480px) {
     :root {
-        /* --font-size-base: 0.95rem; */ /* 基本フォントサイズは変更しない */
-        --header-height: 55px; /* スマホ用ヘッダー高さ */
-        --footer-height: 65px; /* スマホ用フッター高さ */
-        --effective-header-height: 55px; /* スマホ用を適用 */
-        --effective-footer-height: 65px; /* スマホ用を適用 */
+        /* --font-size-base: 0.95rem; */
+        --header-height: 55px;
+        --footer-height: 65px;
+        --effective-header-height: 55px;
+        --effective-footer-height: 65px;
     }
 }
 
@@ -79,7 +79,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html {
     font-size: var(--font-size-base);
-    scroll-behavior: smooth;
+    /* scroll-behavior: smooth; Removed, handle in chat__history */
     height: 100%;
 }
 body {
@@ -93,8 +93,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Prevent background color showing during overscroll/bounce on some mobile browsers */
     background-color: var(--color-bg-end);
+    /* Prevent pull-to-refresh or overscroll effects */
+    overscroll-behavior-y: contain;
 }
 .container {
     width: 100%;
@@ -132,6 +133,8 @@ body {
     overflow-y: auto;
     flex-grow: 1;
     padding-bottom: var(--spacing-lg);
+    /* Optional: Smooth scroll for profile */
+    scroll-behavior: smooth;
 }
 .profile__header { margin-bottom: var(--spacing-lg); }
 .profile__icon {
@@ -224,11 +227,13 @@ body {
 .chat__history {
     flex-grow: 1; /* Desktop: Take remaining space */
     padding: var(--spacing-md) var(--spacing-lg);
+    padding-bottom: var(--spacing-md); /* ★ Adjusted */
     overflow-y: auto;
-    scroll-behavior: smooth;
+    scroll-behavior: smooth; /* ★ Desktop smooth scroll */
     -webkit-overflow-scrolling: touch;
     min-height: 0;
     background-color: var(--color-surface);
+    scroll-padding-bottom: var(--spacing-md); /* ★ Desktop scroll padding */
 }
 .chat__footer {
     height: var(--footer-height);
@@ -267,14 +272,18 @@ body {
 
     .chat__history {
         height: 100%; /* Mobile: Take full container height */
-        padding-top: var(--effective-header-height); /* Add padding for fixed header */
-        padding-bottom: var(--effective-footer-height); /* Add padding for fixed footer */
+        padding-top: var(--effective-header-height);
+        padding-bottom: var(--spacing-sm); /* ★ Use smaller padding */
         padding-left: var(--spacing-md);
         padding-right: var(--spacing-md);
-        box-sizing: border-box; /* Include padding in height */
+        box-sizing: border-box;
         overflow-y: auto;
         flex-grow: unset;
         min-height: unset;
+        /* ★ スクロール終端のパディング (フッターの高さを指定) */
+        scroll-padding-bottom: var(--effective-footer-height);
+        /* ★ JSと合わせてスムーズスクロールを有効に */
+        scroll-behavior: smooth;
     }
 
     .chat__footer {
@@ -302,11 +311,10 @@ body {
     border-radius: var(--border-radius-pill);
     background-color: var(--color-surface);
     color: var(--color-text-primary);
-    font-size: 1rem; /* ★ 修正: デフォルトを 16px に設定 */
+    font-size: 1rem; /* ★ 16px to prevent iOS zoom */
     margin-right: var(--spacing-sm);
     outline: none;
     transition: border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
-    /* Appearance reset for consistency */
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
@@ -332,7 +340,7 @@ body {
 .chat__send-button svg { width: 24px; height: 24px; fill: currentColor; }
 
 
-/* --- Message Styling (No changes needed for layout) --- */
+/* --- Message Styling --- */
 .message {
     display: flex; align-items: flex-start;
     margin-bottom: var(--spacing-lg);
@@ -447,12 +455,12 @@ body {
         flex-direction: column;
         border-radius: var(--border-radius-lg);
     }
-    /* Header, History, Footer styles are already defined for desktop above */
+    .chat__history {
+        scroll-behavior: smooth; /* Restore smooth scroll for desktop */
+        scroll-padding-bottom: var(--spacing-md); /* Add padding for desktop */
+    }
     .message { max-width: 70%; }
-    /* If you want slightly smaller input font on desktop */
-    /* .chat__input {
-        font-size: 0.95rem;
-    } */
+    /* .chat__input { font-size: 0.95rem; } */
 }
 
 /* Smaller phone adjustments */
@@ -463,13 +471,14 @@ body {
     .profile__text { font-size: 0.9rem; }
     .profile__button { font-size: 1rem; padding: 0.7rem 1.8rem;}
     .chat__input {
-        /* Ensure 16px font size even on smaller screens */
         font-size: 1rem; /* ★ Ensure 16px */
-        padding: var(--spacing-sm) var(--spacing-md); /* Adjust padding */
+        padding: var(--spacing-sm) var(--spacing-md);
     }
     .chat__send-button { width: 44px; height: 44px; }
     .chat__history {
         padding-left: var(--spacing-sm);
         padding-right: var(--spacing-sm);
+        padding-bottom: var(--spacing-xs); /* ★ Smaller bottom padding */
+        /* scroll-padding-bottom is inherited */
     }
 }
