@@ -1,4 +1,4 @@
-// script.js (会話上限エラー処理 + デバッグログ追加)
+// script.js (会話上限エラー処理 + デバッグログ追加 + 初期スクロール追加)
 
 // --- Constants and Configuration ---
 const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api'; // 確認済みのURL
@@ -12,7 +12,6 @@ const ERROR_MESSAGES = {
     PROFILE_FETCH_ERROR: 'キャラクター情報の取得に失敗しました。',
     LIMIT_REACHED: 'このキャラクターとの会話上限に達しました。' // 上限到達メッセージ
 };
-// const TEST_USER_ID = "test-dummy-user-123"; // Now using getUniqueIdFromUrl
 
 // --- DOM Elements ---
 const profileView = document.getElementById('profile-view');
@@ -49,8 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     else { console.error("Chat form not found"); }
     if(userInput) {
         userInput.addEventListener('keypress', handleInputKeyPress);
-        // Initial focus might be better after profile loads or chat starts
-        // userInput.focus();
     } else { console.error("User input not found"); }
 });
 
@@ -63,8 +60,8 @@ async function loadProfileData(id) {
         if (!response.ok) {
             let errorMsg = ERROR_MESSAGES.PROFILE_FETCH_ERROR;
             try {
-                 const errData = await response.json();
-                 errorMsg = (response.status === 404 && errData.error) ? ERROR_MESSAGES.INVALID_ID : (errData.error || `HTTP ${response.status}`);
+                const errData = await response.json();
+                errorMsg = (response.status === 404 && errData.error) ? ERROR_MESSAGES.INVALID_ID : (errData.error || `HTTP ${response.status}`);
             } catch (e) { errorMsg = `HTTP ${response.status}`; }
             throw new Error(errorMsg);
         }
@@ -95,21 +92,21 @@ function displayProfileData(data) {
 }
 
 function displayProfileError(message) {
-     if (!profileView || !charName || !charProfile || !profileError || !startChatButton) return;
-     charName.textContent = 'エラー';
-     charProfile.textContent = 'キャラクター情報を読み込めませんでした。';
-     const displayMessage = Object.values(ERROR_MESSAGES).includes(message) ? message : ERROR_MESSAGES.PROFILE_FETCH_ERROR;
-     profileError.textContent = displayMessage;
-     profileError.style.display = 'block';
-     startChatButton.disabled = true;
+    if (!profileView || !charName || !charProfile || !profileError || !startChatButton) return;
+    charName.textContent = 'エラー';
+    charProfile.textContent = 'キャラクター情報を読み込めませんでした。';
+    const displayMessage = Object.values(ERROR_MESSAGES).includes(message) ? message : ERROR_MESSAGES.PROFILE_FETCH_ERROR;
+    profileError.textContent = displayMessage;
+    profileError.style.display = 'block';
+    startChatButton.disabled = true;
 }
 
 function showLoadingState(isLoading) {
-     if(isLoading) {
+    if(isLoading) {
         if(charName) charName.textContent = '読み込み中...';
         if(charProfile) charProfile.textContent = '情報を取得しています...';
         if(startChatButton) startChatButton.disabled = true;
-     }
+    }
 }
 
 // --- View Switching ---
@@ -118,9 +115,12 @@ function startChat() {
     profileView.classList.add('hidden');
     chatView.classList.remove('hidden');
     userInput.focus();
+    // Add welcome message if chat is empty (appendMessage handles scrolling)
     setTimeout(() => {
         if (chatHistory && chatHistory.children.length === 0) { appendMessage('ai', WELCOME_MESSAGE); }
     }, 100);
+    // ★ Scroll to bottom immediately when chat view is shown (for existing history)
+    scrollToBottom();
 }
 
 // --- Event Handlers (Chat) ---
@@ -135,10 +135,10 @@ function sendMessage() {
     const userMessageText = userInput.value.trim();
     if (userMessageText === '') return;
 
-    appendMessage('user', userMessageText);
+    appendMessage('user', userMessageText); // Scrolls in appendMessage
     userInput.value = '';
     userInput.focus();
-    showTypingIndicator();
+    showTypingIndicator(); // Scrolls in showTypingIndicator
     setAiResponding(true);
 
     fetch(API_ENDPOINT, {
@@ -148,50 +148,37 @@ function sendMessage() {
     })
     .then(response => {
         if (!response.ok) {
-            // ▼▼▼ ★★★ 403 の処理をシンプル化 ★★★ ▼▼▼
             if (response.status === 403) {
-                // 403 が返ってきたら、無条件で上限到達エラーとして扱う
                 throw new Error(ERROR_MESSAGES.LIMIT_REACHED);
             }
-            // ▲▲▲ ★★★ 403 の処理をシンプル化 ★★★ ▲▲▲
-    
-            // 404 Not Found はキャラクターが見つからない場合
             if (response.status === 404) {
-                 return response.json().then(errData => {
-                     // エラーメッセージがあれば使う、なければデフォルト
+                return response.json().then(errData => {
                      throw new Error(errData.error || ERROR_MESSAGES.INVALID_ID);
-                 }).catch(() => { throw new Error(ERROR_MESSAGES.INVALID_ID); });
+                }).catch(() => { throw new Error(ERROR_MESSAGES.INVALID_ID); });
             }
-            // その他のHTTPエラー (500 Internal Server Error など)
             return response.json().then(errData => {
                  const errorMsg = errData.error || `サーバーエラーが発生しました (HTTP ${response.status})`;
                  throw new Error(errorMsg);
-            // ネットワークエラー等でJSONが読めない場合はHTTPステータスエラー
             }).catch(() => { throw new Error(`HTTP error! status: ${response.status}`); });
         }
-        return response.json(); // 正常なレスポンス (200 OK)
+        return response.json();
     })
     .then(data => {
         if (data && data.reply) {
-            appendMessage('ai', data.reply);
+            appendMessage('ai', data.reply); // Scrolls in appendMessage
         } else {
             throw new Error(ERROR_MESSAGES.API_RESPONSE);
         }
     })
     .catch(error => {
-        // ▼▼▼ デバッグログは不要であれば削除してもOK ▼▼▼
-        console.error('>>> Caught Error Object:', error);
-        console.error('>>> Caught Error Message:', error.message);
-        // ▲▲▲ デバッグログ ▲▲▲
-    
         console.error('Error sending message or processing response:', error);
         let displayError = ERROR_MESSAGES.GENERAL;
         if (Object.values(ERROR_MESSAGES).includes(error.message)) {
-             displayError = error.message; // LIMIT_REACHED もここで拾われる
+             displayError = error.message;
         } else if (error.message.includes('HTTP') || error.message.includes('Failed to fetch')) {
              displayError = ERROR_MESSAGES.NETWORK;
         }
-        appendChatError(displayError);
+        appendChatError(displayError); // Scrolls in appendChatError (via appendMessage)
     })
     .finally(() => {
         removeTypingIndicator();
@@ -221,6 +208,7 @@ function appendMessage(senderType, text) {
         icon.style.backgroundImage = `url('${characterIconUrl}')`;
         icon.style.backgroundColor = 'transparent';
     } else {
+        // Reset icon styles for user or error messages
         icon.style.backgroundImage = '';
         icon.style.backgroundColor = '';
     }
@@ -229,7 +217,7 @@ function appendMessage(senderType, text) {
     else { messageRow.appendChild(icon); messageRow.appendChild(content); }
     fragment.appendChild(messageRow);
     chatHistory.appendChild(fragment);
-    scrollToBottom();
+    scrollToBottom(); // ★ Scroll after adding message
 }
 
 function createMessageRowElement(senderType, messageId) {
@@ -243,6 +231,7 @@ function createMessageRowElement(senderType, messageId) {
 function createIconElement(senderType) {
     const element = document.createElement('div');
     element.className = 'message__icon';
+    // Icon background image is set in appendMessage
     return element;
 }
 
@@ -252,6 +241,7 @@ function createMessageContentElement(senderType, text) {
     const bubble = document.createElement('div');
     bubble.className = 'message__bubble';
     const linkRegex = /\[([^\]]+)]\((https?:\/\/[^\s)]+)\)/g;
+    // Render link only if not an error message and contains the pattern
     if (senderType !== 'error' && linkRegex.test(text)) {
         bubble.innerHTML = text.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     } else {
@@ -261,6 +251,7 @@ function createMessageContentElement(senderType, text) {
     timestamp.className = 'message__timestamp';
     timestamp.textContent = getCurrentTime();
     content.appendChild(bubble);
+    // Only add timestamp for non-error messages
     if (senderType !== 'error') { content.appendChild(timestamp); }
     return content;
 }
@@ -280,7 +271,7 @@ function showTypingIndicator() {
     bubble.appendChild(indicator); content.appendChild(bubble);
     messageRow.appendChild(icon); messageRow.appendChild(content);
     fragment.appendChild(messageRow); chatHistory.appendChild(fragment);
-    scrollToBottom();
+    scrollToBottom(); // ★ Scroll after adding indicator
 }
 
 function removeTypingIndicator() {
@@ -292,19 +283,16 @@ function removeTypingIndicator() {
 }
 
 function appendChatError(message) {
-     // Ensure chatHistory element exists before trying to append
-     if (chatHistory) {
-         appendMessage('error', message);
-     } else {
-         console.error("Chat history element not found, cannot append error:", message);
-         // Optionally display error elsewhere, like the profile error div
-         if(profileError) {
+    if (chatHistory) {
+        appendMessage('error', message); // appendMessage handles scrolling
+    } else {
+        console.error("Chat history element not found, cannot append error:", message);
+        if(profileError) {
             profileError.textContent = `チャットエラー: ${message}`;
             profileError.style.display = 'block';
-         }
-     }
+        }
+    }
 }
-
 
 // --- Utility Functions ---
 function getCurrentTime() {
@@ -313,7 +301,10 @@ function getCurrentTime() {
 
 function scrollToBottom() {
     if(!chatHistory) return;
-    requestAnimationFrame(() => { chatHistory.scrollTop = chatHistory.scrollHeight; });
+    // Use requestAnimationFrame to ensure DOM update is complete before scrolling
+    requestAnimationFrame(() => {
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    });
 }
 
 // --- Function to get Character ID from URL ---
