@@ -1,64 +1,64 @@
-/* style.css (ミニマルクリーン + 青アクセント / Noto Sans JP) */
+/* style.css (ミニマルクリーン + 青アクセント) */
 
-/* --- Google Font Import (HTMLの<link>を使う場合は不要) --- */
-/* @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap'); */
+/* --- Google Font Import --- */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
 
 /* --- CSS Variables --- */
 :root {
     /* Colors */
-    --color-bg: #f4f7f9;         /* 背景 (さらに薄いグレー) */
+    --color-bg: #f8f9fa;         /* 背景 (ライトグレー) */
     --color-surface: #ffffff;    /* カードやチャットエリアの背景 (白) */
-    --color-text-primary: #2f3e4e; /* 主要テキスト (やや青みがかったダークグレー) */
-    --color-text-secondary: #6a7a8a;/* 補助テキスト (ミディアムグレー) */
-    --color-border: #e3e8ed;       /* 境界線 (薄いグレー) */
+    --color-text-primary: #212529; /* 主要テキスト (ダークグレー) */
+    --color-text-secondary: #6c757d;/* 補助テキスト (ミディアムグレー) */
+    --color-border: #dee2e6;       /* 境界線 (ライトグレー) */
     --color-accent: #004080;      /* アクセント (深みのある青) */
     --color-accent-hover: #003366; /* アクセントホバー (より濃い青) */
     --color-accent-text: #ffffff;  /* アクセントカラー上のテキスト (白) */
-    --color-ai-bubble-bg: #eef1f4; /* AI吹き出し背景 (ごく薄いグレー) */
+    --color-ai-bubble-bg: #e9ecef; /* AI吹き出し背景 (薄いグレー) */
     --color-error-bg: #f8d7da;
     --color-error-text: #721c24;
-    --color-icon-placeholder: #dbe0e4;
+    --color-icon-placeholder: #ced4da;
 
     /* Typography */
     --font-family-base: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-size-base: 1rem;     /* 16px */
     --font-size-sm: 0.875rem; /* 14px */
     --font-size-xs: 0.75rem;  /* 12px */
-    --line-height-base: 1.7; /* 行間を読みやすく */
+    --line-height-base: 1.65;
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-bold: 700;
 
     /* Spacing */
-    --spacing-xs: 0.25rem;  /* 4px */
-    --spacing-sm: 0.5rem;   /* 8px */
-    --spacing-md: 1rem;     /* 16px */
-    --spacing-lg: 1.5rem;   /* 24px */
-    --spacing-xl: 2.5rem;   /* 40px */
-    --spacing-xxl: 4rem;    /* 64px */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-xxl: 3rem;
 
     /* Borders */
-    --border-radius-sm: 4px;
-    --border-radius-md: 8px;
-    --border-radius-lg: 12px; /* 少し抑えめに */
-    --border-radius-pill: 50rem;
+    --border-radius-sm: 0.25rem; /* 4px */
+    --border-radius-md: 0.5rem;  /* 8px */
+    --border-radius-lg: 1rem;    /* 16px */
+    --border-radius-pill: 50rem; /* Pill shape */
     --border-radius-circle: 50%;
 
     /* Shadows */
-    --shadow-sm: 0 2px 4px rgba(47, 62, 78, 0.06);  /* よりソフトな影 */
-    --shadow-md: 0 5px 15px rgba(47, 62, 78, 0.08);
-    --shadow-lg: 0 10px 30px rgba(47, 62, 78, 0.1);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.12);
 
     /* Others */
-    --header-height: 64px; /* 少し高く */
-    --footer-height: 80px; /* 高さを確保 */
+    --header-height: 60px;
+    --footer-height: 75px; /* 少し高さを確保 */
     --message-max-width: 80%;
     --transition-duration: 0.2s;
 }
 
 /* --- Basic Reset & Body --- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: var(--font-size-base); scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+html { font-size: var(--font-size-base); scroll-behavior: smooth; }
 body {
     font-family: var(--font-family-base);
     background-color: var(--color-bg);
@@ -69,7 +69,7 @@ body {
 }
 .container {
     width: 100%;
-    padding: var(--spacing-md); /* 全体コンテナのパディング */
+    padding: var(--spacing-sm); /* 全体コンテナの左右に少しパディング */
 }
 
 /* --- View Control --- */
@@ -78,152 +78,139 @@ body {
 /* --- Shared Section Styling --- */
 .view-section {
     width: 100%;
-    max-width: 700px; /* デスクトップでの最大幅 */
-    margin: var(--spacing-xl) auto;
+    max-width: 640px; /* 少し広げる */
+    margin: var(--spacing-xl) auto; /* 上下のマージンを確保 */
     background-color: var(--color-surface);
-    border-radius: var(--border-radius-lg);
+    border-radius: var(--border-radius-lg); /* 角丸を大きく */
     box-shadow: var(--shadow-md);
-    overflow: hidden;
+    overflow: hidden; /* 中身がはみ出ないように */
 }
 
 /* --- Profile View Styling --- */
 .profile {
-    padding: var(--spacing-xl) var(--spacing-lg);
+    padding: var(--spacing-xl) var(--spacing-lg); /* 内側のパディング */
     text-align: center;
 }
-.profile__card { /* This class remains optional for structure */ }
+.profile__card { /* Optional inner card */ }
 .profile__header { margin-bottom: var(--spacing-lg); }
 .profile__icon {
-    width: 160px; height: 160px; /* アイコンを大きく */
+    width: 150px; height: 150px; /* アイコンサイズ */
     border-radius: var(--border-radius-circle);
     object-fit: cover;
     margin-bottom: var(--spacing-lg);
-    border: 6px solid var(--color-surface); /* 太めの枠線で切り抜き効果 */
-    box-shadow: var(--shadow-lg); /* 強めの影 */
+    border: 4px solid var(--color-surface); /* アイコン枠線を背景と同化させて切り抜き風に */
+    box-shadow: var(--shadow-md); /* 影で立体感を出す */
     background-color: var(--color-icon-placeholder);
 }
 .profile__name {
-    font-size: 2rem;
+    font-size: 1.75rem; /* 名前サイズ */
     font-weight: var(--font-weight-bold);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     color: var(--color-text-primary);
 }
 .profile__body { margin-bottom: var(--spacing-xl); }
 .profile__text {
-    font-size: 1rem;
-    line-height: 1.8; /* 本文の行間をさらに広げる */
+    font-size: 0.95rem; /* 少し小さめ */
+    line-height: 1.75; /* 行間を広めに */
     color: var(--color-text-secondary);
     white-space: pre-wrap;
-    text-align: left;
-    padding: 0 var(--spacing-md);
-    max-width: 500px; /* 本文エリアの幅を制限 */
-    margin-left: auto;
-    margin-right: auto;
+    text-align: left; /* 本文は読みやすいように左寄せ */
+    padding: 0 var(--spacing-md); /* 左右に少しパディング */
 }
 .profile__footer { margin-top: var(--spacing-lg); }
 .profile__button {
     display: inline-block;
-    padding: var(--spacing-md) var(--spacing-xl); /* ボタンのパディング */
-    font-size: 1.1rem;
+    padding: var(--spacing-sm) var(--spacing-xl); /* パディング調整 */
+    font-size: 1.05rem;
     font-weight: var(--font-weight-medium);
     color: var(--color-accent-text);
     background-color: var(--color-accent);
     border: none;
-    border-radius: var(--border-radius-pill);
+    border-radius: var(--border-radius-pill); /* 丸みを帯びた形状 */
     cursor: pointer;
-    transition: background-color var(--transition-duration) ease, transform var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
-    box-shadow: var(--shadow-sm);
+    transition: background-color var(--transition-duration) ease, transform var(--transition-duration) ease;
 }
 .profile__button:hover {
     background-color: var(--color-accent-hover);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    transform: translateY(-1px); /* わずかに上に移動 */
 }
 .profile__button:active {
     transform: translateY(0px) scale(0.98);
-    box-shadow: none;
 }
 .profile__button:disabled {
     background-color: var(--color-icon-placeholder);
     color: var(--color-text-secondary);
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
 }
-#profile-error.error-message { /* エラーメッセージは共通スタイルを使用 */
+#profile-error.error-message { /* エラーメッセージスタイルは共通化 */
     margin-top: var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
 }
 
 /* --- Chat View Styling --- */
 .chat {
-    padding: 0;
-    margin: 0; /* Remove auto margin for full height */
-    height: 100vh;
-    max-width: none; /* Remove max-width for full viewport */
-    border-radius: 0;
-    box-shadow: none;
-    display: flex; /* Keep flex */
-    /* Centering is handled by .chat__container's max-width on desktop */
+    padding: 0; /* 内側のコンテナがpaddingを持つ */
+    margin: 0 auto; /* レスポンシブで幅が狭まる場合の中央寄せ */
+    height: 100vh; /* 画面全体を使う */
+    max-width: var(--chat-container-max-width); /* PCでの最大幅 */
+    border-radius: 0; /* 全画面なので不要 */
+    box-shadow: none; /* 全画面なので不要 */
+    display: flex; /* Show chat view */
 }
 .chat__container {
     width: 100%; height: 100%;
-    max-width: var(--chat-container-max-width); /* Max width on desktop */
-    margin: 0 auto; /* Center on desktop */
     background-color: var(--color-surface);
     display: flex; flex-direction: column;
     overflow: hidden;
-    box-shadow: var(--shadow-lg);
-    border-radius: 0; /* No radius on mobile */
+    box-shadow: var(--shadow-lg); /* チャット全体に影を */
+    border-radius: var(--border-radius-md); /* PC表示用に角丸 */
 }
 .chat__header {
     height: var(--header-height);
-    background: var(--color-surface); /* ヘッダー背景を白に */
-    color: var(--color-text-primary); /* ヘッダー文字色 */
-    border-bottom: 1px solid var(--color-border); /* 下線を追加 */
+    background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover)); /* ヘッダーにグラデーション */
+    color: var(--color-accent-text);
     display: flex; align-items: center;
-    padding: 0 var(--spacing-lg);
+    padding: 0 var(--spacing-lg); /* 左右パディング */
     flex-shrink: 0;
-    /* box-shadow: none; */ /* 影を削除 */
+    box-shadow: var(--shadow-sm);
     z-index: 10;
-    position: sticky; /* ヘッダーを固定 */
-    top: 0;
 }
-.chat__title { font-size: 1.15rem; font-weight: var(--font-weight-medium); }
+.chat__title { font-size: 1.1rem; font-weight: var(--font-weight-medium); }
 .chat__history {
     flex-grow: 1;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg); /* パディング調整 */
     overflow-y: auto;
     scroll-behavior: smooth;
-    background-color: var(--color-surface); /* Ensure background */
 }
 .chat__footer {
     height: var(--footer-height);
-    background-color: var(--color-surface); /* フッター背景も白に */
-    border-top: 1px solid var(--color-border); /* 上線 */
-    padding: var(--spacing-md) var(--spacing-lg); /* パディング調整 */
+    background-color: #f1f3f5; /* フッター背景色 */
+    border-top: 1px solid var(--color-border);
+    padding: var(--spacing-sm) var(--spacing-md); /* パディング調整 */
     flex-shrink: 0;
-    display: flex;
+    display: flex; /* フォームを中央揃えにする場合 */
     align-items: center;
-    box-shadow: 0 -2px 5px rgba(47, 62, 78, 0.05); /* 上向きの影 */
 }
 .chat__input-form { display: flex; align-items: center; width: 100%; height: 100%; }
 .chat__input {
     flex-grow: 1;
-    height: calc(var(--footer-height) - var(--spacing-md) * 2); /* 高さをフッターに合わせる */
-    padding: 0 var(--spacing-lg); /* 左右パディング */
+    height: calc(100% - var(--spacing-sm)); /* 高さを調整 */
+    padding: var(--spacing-sm) var(--spacing-lg); /* パディング */
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-pill);
-    background-color: var(--color-bg); /* 入力欄背景を少し変える */
+    background-color: var(--color-surface);
     color: var(--color-text-primary);
     font-size: 0.95rem;
-    margin-right: var(--spacing-md);
+    margin-right: var(--spacing-sm);
     outline: none;
     transition: border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
 }
 .chat__input:focus,
 .chat__input:focus-visible {
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.15);
+    box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2); /* フォーカス時の影 */
 }
 .chat__input::placeholder { color: var(--color-text-secondary); }
 .chat__send-button {
@@ -231,59 +218,58 @@ body {
     color: var(--color-accent-text);
     border: none;
     border-radius: var(--border-radius-circle);
-    width: 44px; height: 44px; /* サイズ調整 */
+    width: 48px; height: 48px; /* ボタンサイズ */
     flex-shrink: 0; cursor: pointer;
     display: flex; justify-content: center; align-items: center;
     transition: background-color var(--transition-duration) ease;
 }
 .chat__send-button:hover { background-color: var(--color-accent-hover); }
 .chat__send-button:disabled { background-color: var(--color-icon-placeholder); cursor: not-allowed; }
-.chat__send-button svg { width: 20px; height: 20px; fill: currentColor; }
+.chat__send-button svg { width: 24px; height: 24px; fill: currentColor; }
 
 /* --- Message Styling --- */
 .message {
     display: flex; align-items: flex-start;
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg); /* メッセージ間隔を広げる */
     max-width: var(--message-max-width);
-    opacity: 0; animation: fadeIn 0.4s ease forwards; /* 少しゆっくり */
+    opacity: 0; animation: fadeIn var(--message-animate-duration) ease forwards;
 }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 .message__icon {
-    width: 40px; height: 40px;
+    width: 40px; height: 40px; /* アイコンサイズ */
     border-radius: var(--border-radius-circle);
     background-color: var(--color-icon-placeholder);
     background-size: cover; background-position: center; background-repeat: no-repeat;
-    flex-shrink: 0; margin-top: 0;
-    /* box-shadow: var(--shadow-sm); */ /* アイコンの影は削除 */
-    border: 1px solid var(--color-border); /* 枠線追加 */
+    flex-shrink: 0;
+    margin-top: 0; /* 吹き出しとの垂直位置調整 */
+    box-shadow: var(--shadow-sm); /* アイコンにも影 */
 }
-.message--user .message__icon { /* ユーザーアイコンの色を少し濃く */
+.message--user .message__icon { /* ユーザーアイコン SVG 色変更 */
      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236c757d"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
      background-color: transparent;
-     border-color: var(--color-accent); /* ユーザーアイコン枠をアクセントカラーに */
 }
-.message--error .message__icon { /* エラーアイコン */
+.message--error .message__icon { /* エラーアイコン色変更 */
      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23dc3545"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>');
-     background-color: transparent; border-color: transparent;
+     background-color: transparent;
 }
-.message__content { margin: 0 var(--spacing-md); display: flex; flex-direction: column; flex-grow: 1; min-width: 0; }
+.message__content { margin: 0 var(--spacing-md); display: flex; flex-direction: column; }
 .message__bubble {
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-sm) var(--spacing-md); /* 吹き出し内パディング */
+    border-radius: var(--border-radius-lg); /* 吹き出しの角丸 */
     word-wrap: break-word;
     line-height: var(--line-height-base);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-sm); /* 吹き出しの影 */
     position: relative;
-    max-width: 100%;
+    max-width: 100%; /* Ensure bubble doesn't overflow content area */
 }
-.message__bubble a { color: var(--color-accent); font-weight: var(--font-weight-medium); text-decoration: none; }
-.message__bubble a:hover { text-decoration: underline; }
+.message__bubble a { color: var(--link-color); text-decoration: underline; }
+.message__bubble a:hover { text-decoration: none; }
 .message__timestamp {
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-xs); /* タイムスタンプサイズ */
     color: var(--color-text-secondary);
     margin-top: var(--spacing-xs);
-    padding: 0 var(--spacing-xs); /* タイムスタンプ位置調整 */
+    padding: 0 var(--spacing-sm); /* 少し内側に */
 }
 
 /* Message Modifiers */
@@ -300,7 +286,7 @@ body {
 .message--error .message__bubble {
     background-color: var(--color-error-bg);
     color: var(--color-error-text);
-    border: 1px solid var(--color-error-text);
+    border: 1px solid rgba(114, 28, 36, 0.3);
     font-weight: var(--font-weight-medium);
 }
 .message--error .message__timestamp { display: none; }
@@ -309,49 +295,48 @@ body {
 .error-message {
     color: var(--color-error-text);
     background-color: var(--color-error-bg);
-    border: 1px solid var(--color-error-text);
+    border: 1px solid rgba(114, 28, 36, 0.3);
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius-md);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
 }
-/* Hide by default if needed via JS */
-#profile-error.hidden, #chat-error.hidden { display: none; }
 
 
 /* Typing Indicator */
-.typing-indicator { display: flex; align-items: center; padding: 0.7rem 1rem; } /* Padding consistent with bubble */
-.typing-indicator__dot { height: 7px; width: 7px; background-color: var(--color-text-secondary); border-radius: 50%; display: inline-block; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
+.typing-indicator { display: flex; align-items: center; padding: 0.6rem 0.9rem; }
+.typing-indicator__dot { height: 8px; width: 8px; background-color: var(--color-text-secondary); border-radius: 50%; display: inline-block; margin: 0 2px; animation: bounce 1.3s infinite ease-in-out both; }
 .typing-indicator__dot:nth-child(1) { animation-delay: -0.32s; }
 .typing-indicator__dot:nth-child(2) { animation-delay: -0.16s; }
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
 /* Scrollbar Styling (Webkit) - Light Theme */
-.chat__history::-webkit-scrollbar { width: 6px; /* 細く */ }
-.chat__history::-webkit-scrollbar-track { background: transparent; } /* トラックは透明に */
-.chat__history::-webkit-scrollbar-thumb { background: #d3d3d3; border-radius: 3px; } /* 少し濃いグレー */
+.chat__history::-webkit-scrollbar { width: 8px; }
+.chat__history::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+.chat__history::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
 
 /* Responsive Design */
 @media (min-width: 768px) {
-    .container { padding: var(--spacing-lg); }
+    .container { padding: var(--spacing-lg); } /* Desktop padding */
     .view-section.profile { margin-top: var(--spacing-xxl); }
-    .chat__container { /* Add border-radius only on desktop */
+    .chat { /* Chat view on desktop uses max-width from .view-section */
+        height: calc(100vh - (var(--spacing-lg) * 2)); /* Adjust height based on body padding */
         border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-lg);
     }
-    .chat { height: calc(100vh - (var(--spacing-lg) * 2)); border-radius: var(--border-radius-lg); }
-    .message { max-width: 75%; }
+    .message { max-width: 70%; } /* Adjust message width */
 }
-@media (max-width: 480px) {
+@media (max-width: 480px) { /* Adjustments for smaller phones */
      :root {
          --base-font-size: 0.95rem;
          --header-height: 55px;
-         --footer-height: 70px; /* 少し戻す */
+         --footer-height: 65px;
      }
-    .profile__icon { width: 130px; height: 130px; }
-    .profile__name { font-size: 1.7rem; }
-    .profile__text { font-size: 0.95rem; }
-    .profile__button { font-size: 1rem; padding: 0.75rem 1.9rem;}
-    .chat__input { font-size: 0.95rem; }
+    .profile__icon { width: 120px; height: 120px; }
+    .profile__name { font-size: 1.6rem; }
+    .profile__text { font-size: 0.9rem; }
+    .profile__button { font-size: 1rem; padding: 0.7rem 1.8rem;}
+    .chat__input { font-size: 0.9rem; padding: var(--spacing-sm) var(--spacing-md); }
     .chat__send-button { width: 44px; height: 44px; }
 }
