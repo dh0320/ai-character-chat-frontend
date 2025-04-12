@@ -1,4 +1,4 @@
-// script.js (自動スクロール改善版)
+// script.js (scrollIntoView 改善版)
 
 // --- Constants and Configuration ---
 const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api'; // 確認済みのURL
@@ -115,12 +115,22 @@ function startChat() {
     profileView.classList.add('hidden');
     chatView.classList.remove('hidden');
     userInput.focus();
-    // Add welcome message if chat is empty (appendMessage handles scrolling)
+
+    // Initial scroll and welcome message logic
     setTimeout(() => {
-        if (chatHistory && chatHistory.children.length === 0) { appendMessage('ai', WELCOME_MESSAGE); }
-    }, 100);
-    // Scroll to bottom immediately when chat view is shown (for existing history)
-    scrollToBottom();
+        if (chatHistory) {
+            if (chatHistory.children.length === 0) {
+                // Add welcome message if history is empty (appendMessage handles scroll)
+                appendMessage('ai', WELCOME_MESSAGE);
+            } else {
+                // If history exists, scroll the last message into view immediately
+                const lastMessage = chatHistory.lastElementChild;
+                if (lastMessage) {
+                    lastMessage.scrollIntoView({ behavior: 'auto', block: 'end' }); // 'auto' for instant scroll on load
+                }
+            }
+        }
+    }, 100); // Short delay to ensure view is ready
 }
 
 // --- Event Handlers (Chat) ---
@@ -135,10 +145,10 @@ function sendMessage() {
     const userMessageText = userInput.value.trim();
     if (userMessageText === '') return;
 
-    appendMessage('user', userMessageText); // Scrolls in appendMessage
+    appendMessage('user', userMessageText); // scrollIntoView is called within appendMessage
     userInput.value = '';
     userInput.focus();
-    showTypingIndicator(); // Scrolls in showTypingIndicator
+    showTypingIndicator(); // scrollIntoView is called within showTypingIndicator
     setAiResponding(true);
 
     fetch(API_ENDPOINT, {
@@ -165,7 +175,7 @@ function sendMessage() {
     })
     .then(data => {
         if (data && data.reply) {
-            appendMessage('ai', data.reply); // Scrolls in appendMessage
+            appendMessage('ai', data.reply); // scrollIntoView is called within appendMessage
         } else {
             throw new Error(ERROR_MESSAGES.API_RESPONSE);
         }
@@ -178,7 +188,7 @@ function sendMessage() {
         } else if (error.message.includes('HTTP') || error.message.includes('Failed to fetch')) {
              displayError = ERROR_MESSAGES.NETWORK;
         }
-        appendChatError(displayError); // Scrolls in appendChatError (via appendMessage)
+        appendChatError(displayError); // scrollIntoView is called within appendMessage
     })
     .finally(() => {
         removeTypingIndicator();
@@ -216,7 +226,9 @@ function appendMessage(senderType, text) {
     else { messageRow.appendChild(icon); messageRow.appendChild(content); }
     fragment.appendChild(messageRow);
     chatHistory.appendChild(fragment);
-    scrollToBottom(); // ★ Scroll after adding message
+
+    // ★ Use scrollIntoView to bring the new message into view
+    messageRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 function createMessageRowElement(senderType, messageId) {
@@ -267,7 +279,9 @@ function showTypingIndicator() {
     bubble.appendChild(indicator); content.appendChild(bubble);
     messageRow.appendChild(icon); messageRow.appendChild(content);
     fragment.appendChild(messageRow); chatHistory.appendChild(fragment);
-    scrollToBottom(); // ★ Scroll after adding indicator
+
+    // ★ Use scrollIntoView for the typing indicator as well
+    messageRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 function removeTypingIndicator() {
@@ -279,8 +293,9 @@ function removeTypingIndicator() {
 }
 
 function appendChatError(message) {
+    // appendMessage inside handles the scrollIntoView call
     if (chatHistory) {
-        appendMessage('error', message); // appendMessage handles scrolling
+        appendMessage('error', message);
     } else {
         console.error("Chat history element not found, cannot append error:", message);
         if(profileError) {
@@ -295,19 +310,7 @@ function getCurrentTime() {
     return new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-/**
- * Scrolls the chat history to the bottom.
- * Uses setTimeout with 0 delay to ensure scrolling happens after DOM update.
- */
-function scrollToBottom() {
-    if(!chatHistory) return;
-    // ★ Use setTimeout to defer execution slightly, allowing DOM to update
-    setTimeout(() => {
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-        // Optional: Add a smooth scroll behavior (might conflict with CSS scroll-behavior)
-        // chatHistory.scrollTo({ top: chatHistory.scrollHeight, behavior: 'smooth' });
-    }, 0);
-}
+// scrollToBottom function is no longer needed as scrollIntoView is used directly
 
 // --- Function to get Character ID from URL ---
 function getUniqueIdFromUrl() {
