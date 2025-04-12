@@ -1,4 +1,4 @@
-/* style.css (レイアウト再修正版) */
+/* style.css (レイアウト再々修正版) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -115,7 +115,7 @@ body {
     background-color: var(--color-surface);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-md);
-    overflow: hidden; /* Keep overflow hidden here */
+    overflow: hidden; /* ★ Keep on top level */
     position: relative;
 }
 
@@ -134,42 +134,46 @@ body {
 .profile__button:disabled { background-color: var(--color-icon-placeholder); color: var(--color-text-secondary); cursor: not-allowed; transform: none; }
 #profile-error.error-message { margin-top: var(--spacing-lg); padding: var(--spacing-sm) var(--spacing-md); font-size: var(--font-size-sm); }
 
+
 /* --- Chat View Styling --- */
 .chat {
     padding: 0; margin: 0;
     border-radius: inherit; box-shadow: inherit;
-    height: 100%; width: 100%; /* Ensure full size */
-    display: flex; /* ★ Default to flex for Desktop */
-    flex-direction: column; /* ★ Default to flex for Desktop */
-    overflow: hidden; /* ★ Prevent chat element itself from scrolling */
+    height: 100%; width: 100%;
+    display: flex; /* ★ Default to flex */
+    flex-direction: column;
+    /* overflow: hidden; */ /* ★ Removed */
 }
 .chat__container {
     width: 100%; height: 100%; background-color: var(--color-surface);
     border-radius: inherit;
-    position: relative; /* ★ Needed for absolute positioning of history on mobile */
-    display: flex; /* ★ Default to flex for Desktop */
-    flex-direction: column; /* ★ Default to flex for Desktop */
-    overflow: hidden; /* ★ Prevent container scroll */
+    position: relative; /* ★ Keep relative */
+    display: flex; /* ★ Default to flex */
+    flex-direction: column;
+    /* overflow: hidden; */ /* ★ Removed - Let chat__history handle its own scroll */
 }
 
 /* Default (Desktop) Styles */
 .chat__header {
-    height: var(--header-height); background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover)); color: var(--color-accent-text); display: flex; align-items: center; padding: 0 var(--spacing-lg); flex-shrink: 0; box-shadow: var(--shadow-sm); z-index: 10; position: static; width: 100%; /* Ensure full width */
+    height: var(--header-height); background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover)); color: var(--color-accent-text); display: flex; align-items: center; padding: 0 var(--spacing-lg);
+    flex-shrink: 0; box-shadow: var(--shadow-sm); z-index: 10; position: static; width: 100%;
 }
 .chat__title { font-size: 1.1rem; font-weight: var(--font-weight-medium); }
 .chat__history {
-    position: static; height: auto; width: 100%; /* ★ Ensure width */
+    position: static; height: auto; width: 100%;
     flex-grow: 1;
     padding: var(--spacing-md) var(--spacing-lg);
-    overflow-y: auto;
+    overflow-y: auto; /* ★ History handles its scroll */
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
     background-color: var(--color-surface);
     scroll-padding-bottom: var(--spacing-md);
+    z-index: 1; /* ★ Base z-index */
 }
 .chat__footer {
-    height: var(--footer-height); background-color: #f1f3f5; border-top: 1px solid var(--color-border); padding: var(--spacing-sm) var(--spacing-md); flex-shrink: 0; display: flex; align-items: center; z-index: 5; position: static; width: 100%; /* Ensure full width */
+    height: var(--footer-height); background-color: #f1f3f5; border-top: 1px solid var(--color-border); padding: var(--spacing-sm) var(--spacing-md);
+    flex-shrink: 0; display: flex; align-items: center; z-index: 5; position: static; width: 100%;
 }
 
 /* --- Mobile Specific Layout (LINE style) --- */
@@ -185,22 +189,23 @@ body {
     }
 
     .chat__history {
-        position: absolute; /* Use absolute positioning */
-        top: var(--effective-header-height);    /* Position below header */
-        bottom: var(--effective-footer-height); /* Position above footer */
+        position: absolute;
+        top: var(--effective-header-height);
+        bottom: var(--effective-footer-height);
         left: 0;
-        width: 100%; /* ★ Explicitly set width */
-        height: auto; /* Height determined by top/bottom */
+        right: 0; /* ★ Use left/right for width */
+        width: auto; /* ★ Reset width */
+        height: auto;
         padding: var(--spacing-md);
         box-sizing: border-box;
-        overflow-y: auto;
+        overflow-y: auto; /* ★ Keep scroll */
         scroll-behavior: smooth;
         -webkit-overflow-scrolling: touch;
         background-color: var(--color-surface);
-        /* Unset flex properties */
         flex-grow: unset;
         min-height: unset;
-        scroll-padding-bottom: 0; /* Not needed with this layout */
+        scroll-padding-bottom: 0; /* ★ Not needed */
+        z-index: 1; /* ★ Ensure it's above container bg */
     }
 
     .chat__footer {
@@ -262,8 +267,15 @@ body {
 .profile__card::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
 .profile__card::-webkit-scrollbar-thumb:hover { background: #cccccc; }
 
-/* Responsive Design - Desktop Specific Overrides are now the default */
-/* We only need to override for mobile */
+
+/* Desktop Specific Overrides */
+@media (min-width: 768px) {
+     .container { padding: var(--spacing-lg); }
+     .view-section { height: 90vh; max-height: 800px; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-lg); }
+     /* .chat, .chat__container, .chat__header, .chat__history, .chat__footer use default styles */
+     .message { max-width: 70%; }
+     /* .chat__input { font-size: 0.95rem; } */
+}
 
 /* Smaller phone adjustments */
 @media (max-width: 480px) {
@@ -274,6 +286,6 @@ body {
     .profile__button { font-size: 1rem; padding: 0.7rem 1.8rem;}
     .chat__input { font-size: 1rem; padding: var(--spacing-sm) var(--spacing-md); }
     .chat__send-button { width: 44px; height: 44px; }
-    /* Adjust padding for smaller mobile screens */
+    /* Adjust mobile padding for smaller screens */
     .chat__history { padding: var(--spacing-sm); }
 }
