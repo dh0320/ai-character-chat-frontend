@@ -1,4 +1,4 @@
-/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応) */
+/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応 & 回り込み改善) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -121,60 +121,65 @@ body {
     flex-direction: column;
 }
 
-/* --- Profile View Styling (修正箇所) --- */
+/* --- Profile View Styling --- */
 .profile {
-    /* padding: var(--spacing-xl) var(--spacing-lg); */ /* ★ Paddingは子要素へ移動 */
     text-align: center;
-    display: flex;             /* ★ Flexコンテナ化 */
-    flex-direction: column;    /* ★ 縦方向に配置 */
-    flex-grow: 1;              /* 親要素内で高さを取る */
-    /* overflow: hidden; */     /* ★ sticky のために削除またはコメントアウト */
-    height: 100%;              /* ★ 高さを100%に */
-    position: relative;        /* 子要素のstickyの基準 */
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    height: 100%;
+    position: relative; /* Ensure positioning context for sticky */
+    /* overflow: hidden; */ /* Removed/Commented for sticky */
 }
 
-/* ★ Header section for Icon and Name (Sticky Top) */
 .profile__header {
-    /* margin-bottom: var(--spacing-lg); */ /* marginではなくpaddingで調整 */
-    position: sticky;          /* ★ 上部固定 */
-    top: 0;                    /* ★ 上端に配置 */
-    z-index: 10;               /* ★ スクロールコンテンツより手前に */
-    background-color: var(--color-surface); /* ★ 背景色を設定 */
-    padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg) var(--spacing-lg); /* ★ 上下のPadding調整 */
-    flex-shrink: 0;            /* ★ 縮まないように */
+    position: sticky;
+    top: 0;
+    z-index: 10; /* ★ Ensure header is above card */
+    background-color: var(--color-surface); /* ★ Ensure background is opaque */
+    padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
+    flex-shrink: 0;
     text-align: center;
+    /* Add a specific ID if JS adjustment is needed later */
+    /* id: profile-header; */
 }
 
+/* Profile Icon and Name styles */
 .profile__icon {
     width: 150px;
     height: 150px;
     border-radius: var(--border-radius-circle);
     object-fit: cover;
-    margin: 0 auto var(--spacing-lg) auto; /* ★ 下マージンで名前との間隔調整 */
+    margin: 0 auto var(--spacing-lg) auto;
     border: 4px solid var(--color-surface);
     box-shadow: var(--shadow-md);
     background-color: var(--color-icon-placeholder);
 }
-
 .profile__name {
     font-size: 1.75rem;
     font-weight: var(--font-weight-bold);
-    /* margin-bottom: var(--spacing-sm); */ /* Headerのpadding-bottomで調整 */
     color: var(--color-text-primary);
 }
 
-/* ★ Body/Card section for Profile Text (Scrollable) */
-/* .profile__body { margin-bottom: var(--spacing-xl); } */ /* 不要 */
-
 .profile__card {
-    overflow-y: auto;          /* ★ 縦スクロールを有効化 */
-    flex-grow: 1;              /* ★ 残りの高さをすべて使う */
+    flex-grow: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
     scroll-behavior: smooth;
-    /* ★ Header/Footerとのスペースを確保し、左右のPaddingを設定 */
-    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
-    /* スクロールバー分の考慮（必要なら） */
-    padding-right: calc(var(--spacing-lg) + 6px); /* スクロールバー幅(6px)を追加 */
-    -webkit-overflow-scrolling: touch; /* iOSでの慣性スクロール */
+    /* ★ Adjust padding to provide space between content and header/footer edges */
+    padding-top: var(--spacing-lg); /* Space below header */
+    padding-bottom: var(--spacing-lg); /* Space above footer */
+    padding-left: var(--spacing-lg);
+    /* Adjust right padding considering scrollbar */
+    padding-right: calc(var(--spacing-lg) + 6px); /* 6px for scrollbar width */
+
+    /* ★ Add background color to profile card itself */
+    background-color: var(--color-surface); /* Prevent seeing through to body background */
+
+    /* ★ Use scroll-padding to prevent content snapping under header/footer */
+    /* These values add a small buffer to the scroll stopping point */
+    scroll-padding-top: 10px;
+    scroll-padding-bottom: 10px;
 }
 
 .profile__text {
@@ -183,22 +188,22 @@ body {
     color: var(--color-text-secondary);
     white-space: pre-wrap;
     text-align: left;
-    /* padding: 0 var(--spacing-md); */ /* ★ profile__card で Padding を管理 */
 }
 
-/* ★ Footer section for Button (Sticky Bottom) */
 .profile__footer {
-    /* margin-top: auto; */       /* ★ flex-grow で配置するため不要 */
-    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl) var(--spacing-lg); /* ★ 上下の Padding 調整 */
-    background-color: var(--color-surface); /* ★ 背景色を設定 */
-    position: sticky;          /* ★ 下部固定 */
-    bottom: 0;                 /* ★ 下端に配置 */
-    z-index: 10;               /* ★ スクロールコンテンツより手前に */
-    border-top: 1px solid var(--color-border); /* ★ 上境界線 */
-    flex-shrink: 0;            /* ★ 縮まないように */
+    position: sticky;
+    bottom: 0;
+    z-index: 10; /* ★ Ensure footer is above card */
+    background-color: var(--color-surface); /* ★ Ensure background is opaque */
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl) var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
     text-align: center;
+    /* Add a specific ID if JS adjustment is needed later */
+    /* id: profile-footer; */
 }
 
+/* Profile Button styles */
 .profile__button {
     display: inline-block;
     padding: var(--spacing-sm) var(--spacing-xl);
@@ -225,40 +230,34 @@ body {
     transform: none;
 }
 
-/* ★ Error Message Styling */
+/* Profile Error styles */
 #profile-error.error-message {
-    /* エラーメッセージの位置を調整 (例: ヘッダー内、名前の下に表示) */
-    margin: var(--spacing-sm) auto 0 auto; /* 上マージン調整 */
+    margin: var(--spacing-sm) auto 0 auto;
     padding: var(--spacing-sm) var(--spacing-md);
     font-size: var(--font-size-sm);
-    max-width: calc(100% - 2 * var(--spacing-lg)); /* はみ出さないように */
-    /* Shared error styles */
-    color: var(--color-error-text);
-    background-color: var(--color-error-bg);
-    border: 1px solid rgba(114, 28, 36, 0.3);
-    border-radius: var(--border-radius-md);
-    font-weight: var(--font-weight-medium);
-    /* Ensure it's visible if placed in header */
-    display: block; /* Make sure it takes space */
+    max-width: calc(100% - 2 * var(--spacing-lg));
+    /* Shared error styles are applied via .error-message class below */
+    display: block;
 }
+
 
 /* --- Chat View Styling --- */
 .chat {
     padding: 0; margin: 0;
     border-radius: inherit;
     height: 100%; width: 100%;
-    display: flex; /* ★ Keep flex */
+    display: flex;
     flex-direction: column;
-    flex-grow: 1; /* Allow chat view to take space */
-    overflow: hidden; /* ★ Contain children */
+    flex-grow: 1;
+    overflow: hidden;
 }
 .chat__container {
     width: 100%; height: 100%; background-color: var(--color-surface);
     border-radius: inherit;
     position: relative;
-    display: flex; /* ★ Keep flex */
+    display: flex;
     flex-direction: column;
-    overflow: hidden; /* ★ Container manages overflow */
+    overflow: hidden;
 }
 
 /* Default (Desktop) Styles */
@@ -271,10 +270,10 @@ body {
     position: relative; height: auto; width: 100%;
     flex-grow: 1;
     padding: var(--spacing-md) var(--spacing-lg);
-    overflow-y: auto; /* ★ History handles its scroll */
+    overflow-y: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    min-height: 0; /* Important for flex-grow */
+    min-height: 0;
     background-color: var(--color-surface);
     scroll-padding-bottom: var(--spacing-md);
     z-index: 1;
@@ -284,51 +283,54 @@ body {
     flex-shrink: 0; display: flex; align-items: center; z-index: 5; position: relative; width: 100%;
 }
 
+
 /* --- Mobile Specific Layout (LINE style) --- */
 @media (max-width: 767px) {
+    :root {
+        /* Mobile variable overrides already defined at the top */
+    }
     .view-section {
         border-radius: 0;
         box-shadow: none;
         max-width: 100%;
-        height: 100vh; /* Use viewport height */
-        /* Fallback for older browsers */
+        height: 100vh;
         height: -webkit-fill-available;
-        overflow: hidden; /* ★ Keep overflow hidden on the main container */
+        overflow: hidden;
     }
 
-    /* ★ Profile view adjustments for mobile if needed */
-    .profile {
-        /* Mobile specific profile styles if needed */
-    }
+    /* Adjust profile elements for mobile */
     .profile__icon {
-        width: 120px; /* Slightly smaller icon on mobile */
+        width: 120px;
         height: 120px;
     }
     .profile__name {
-        font-size: 1.5rem; /* Adjust font size */
-    }
-    .profile__card {
-         /* Adjust padding for mobile scrollbar */
-        padding-right: calc(var(--spacing-lg) + 4px); /* Thinner scrollbar space */
+        font-size: 1.5rem;
     }
     .profile__footer {
         padding: var(--spacing-md) var(--spacing-lg); /* Adjust padding */
     }
 
+    .profile__card {
+        /* Adjust right padding for potentially thinner mobile scrollbar */
+        padding-right: calc(var(--spacing-lg) + 4px); /* 4px for scrollbar */
+
+        /* ★ Adjust scroll-padding buffer for mobile */
+        scroll-padding-top: 5px;
+        scroll-padding-bottom: 5px;
+    }
 
     /* Chat view mobile adjustments */
     .chat {
-        height: 100%; /* Ensure chat takes full height */
+        height: 100%;
     }
     .chat__container {
         border-radius: 0;
         height: 100%;
-        position: static; /* ★ Reset position, let chat manage layout */
-        overflow: hidden; /* Let children handle scroll */
+        position: static;
+        overflow: hidden;
     }
-
     .chat__header {
-        position: fixed; /* ★ Keep fixed */
+        position: fixed;
         top: 0;
         left: 0;
         right: 0;
@@ -336,25 +338,21 @@ body {
         z-index: 100;
         box-shadow: var(--shadow-sm);
     }
-
     .chat__history {
-        /* ★ New styles for flex layout with fixed header/footer */
-        flex-grow: 1; /* ★ Take remaining space */
-        overflow-y: auto; /* ★ Keep scroll */
+        flex-grow: 1;
+        overflow-y: auto;
         padding: var(--spacing-md);
-        /* ★ Add padding to prevent content from hiding under fixed header/footer */
         padding-top: calc(var(--effective-header-height) + var(--spacing-md));
         padding-bottom: calc(var(--effective-footer-height) + var(--spacing-md));
         -webkit-overflow-scrolling: touch;
         background-color: var(--color-surface);
         scroll-behavior: smooth;
         z-index: 1;
-        position: static; /* ★ Ensure it's part of the flow */
-        width: 100%; /* Ensure full width */
+        position: static;
+        width: 100%;
     }
-
     .chat__footer {
-        position: fixed; /* ★ Keep fixed */
+        position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
@@ -362,14 +360,14 @@ body {
         z-index: 100;
         border-top: 1px solid var(--color-border);
         background-color: #f1f3f5;
-        display: flex; /* Ensure flex properties work */
-        align-items: center; /* Ensure items are centered vertically */
-        padding: var(--spacing-sm) var(--spacing-md); /* Ensure padding is applied */
+        display: flex;
+        align-items: center;
+        padding: var(--spacing-sm) var(--spacing-md);
     }
 }
 
 /* --- Shared Input/Button Styles --- */
-.chat__input-form { display: flex; align-items: center; width: 100%; height: 100%; gap: var(--spacing-sm); } /* Added gap */
+.chat__input-form { display: flex; align-items: center; width: 100%; height: 100%; gap: var(--spacing-sm); }
 .chat__input {
     flex-grow: 1;
     padding: var(--spacing-sm) var(--spacing-lg);
@@ -385,10 +383,10 @@ body {
     appearance: none;
     min-height: 38px;
     line-height: 1.4;
-    align-self: stretch; /* Stretch vertically within footer */
-    resize: none; /* Prevent manual resize */
-    overflow-y: auto; /* Allow scroll if text wraps */
-    max-height: 100px; /* Optional: limit max height */
+    align-self: stretch;
+    resize: none;
+    overflow-y: auto;
+    max-height: 100px;
 }
 .chat__input:focus, .chat__input:focus-visible { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2); }
 .chat__input::placeholder { color: var(--color-text-secondary); }
@@ -403,8 +401,8 @@ body {
 .message__icon { width: 40px; height: 40px; border-radius: var(--border-radius-circle); background-color: var(--color-icon-placeholder); background-size: cover; background-position: center; background-repeat: no-repeat; flex-shrink: 0; margin-top: 0; box-shadow: var(--shadow-sm); }
 .message--user .message__icon { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236c757d"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'); background-color: transparent; }
 .message--error .message__icon { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23dc3545"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>'); background-color: transparent; }
-.message__content { margin: 0 var(--spacing-md); display: flex; flex-direction: column; min-width: 0; /* Fix potential overflow issues */ }
-.message__bubble { padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius-lg); word-wrap: break-word; line-height: var(--line-height-base); box-shadow: var(--shadow-sm); position: relative; max-width: 100%; background-color: var(--color-ai-bubble-bg); color: var(--color-text-primary); } /* Default AI bubble */
+.message__content { margin: 0 var(--spacing-md); display: flex; flex-direction: column; min-width: 0; }
+.message__bubble { padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius-lg); word-wrap: break-word; line-height: var(--line-height-base); box-shadow: var(--shadow-sm); position: relative; max-width: 100%; background-color: var(--color-ai-bubble-bg); color: var(--color-text-primary); }
 .message__bubble a { color: var(--link-color); text-decoration: underline; }
 .message__bubble a:hover { text-decoration: none; }
 .message__timestamp { font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: var(--spacing-xs); padding: 0 var(--spacing-sm); }
@@ -416,10 +414,10 @@ body {
 .message--user .message__bubble { background-color: var(--color-accent); color: var(--color-accent-text); border-bottom-right-radius: var(--border-radius-sm); }
 .message--user .message__bubble a { color: inherit; text-decoration: underline; font-weight: var(--font-weight-medium); }
 .message--user .message__timestamp { align-self: flex-end; }
-.message--error .message__bubble { background-color: var(--color-error-bg); color: var(--color-error-text); border: 1px solid rgba(114, 28, 36, 0.3); font-weight: var(--font-weight-medium); border-bottom-left-radius: var(--border-radius-sm); /* Consistent radius */ }
+.message--error .message__bubble { background-color: var(--color-error-bg); color: var(--color-error-text); border: 1px solid rgba(114, 28, 36, 0.3); font-weight: var(--font-weight-medium); border-bottom-left-radius: var(--border-radius-sm); }
 .message--error .message__timestamp { display: none; }
 
-/* Error message styling (shared - used by profile error too) */
+/* Error message styling (shared) */
 .error-message {
     color: var(--color-error-text);
     background-color: var(--color-error-bg);
@@ -435,7 +433,7 @@ body {
 .typing-indicator__dot { height: 8px; width: 8px; background-color: var(--color-text-secondary); border-radius: 50%; display: inline-block; margin: 0 2px; animation: bounce 1.3s infinite ease-in-out both; }
 .typing-indicator__dot:nth-child(1) { animation-delay: -0.32s; }
 .typing-indicator__dot:nth-child(2) { animation-delay: -0.16s; }
-.typing-indicator__dot:nth-child(3) { animation-delay: -0.0s; } /* Corrected delay */
+.typing-indicator__dot:nth-child(3) { animation-delay: -0.0s; }
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
 /* Scrollbar Styling (Webkit) - Light Theme */
@@ -445,7 +443,13 @@ body {
 .chat__history::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
 
 /* Profile scrollbar styling */
-.profile__card::-webkit-scrollbar { width: 6px; } /* Make profile scrollbar thinner */
+.profile__card::-webkit-scrollbar { width: 6px; }
 .profile__card::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
 .profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
 .profile__card::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
+
+/* Mobile scrollbar might be thinner */
+@media (max-width: 767px) {
+    .profile__card::-webkit-scrollbar { width: 4px; }
+    .chat__history::-webkit-scrollbar { width: 6px; } /* Adjust chat history scrollbar too if needed */
+}
