@@ -1,4 +1,4 @@
-// script.js (scrollIntoView behavior:auto 改善版)
+// script.js (replaceAll 適用 & scrollIntoView behavior:auto 改善版)
 
 // --- Constants and Configuration ---
 const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api';
@@ -17,7 +17,8 @@ const ERROR_MESSAGES = {
 const profileView = document.getElementById('profile-view');
 const charIcon = document.getElementById('char-icon');
 const charName = document.getElementById('char-name');
-const charProfile = document.getElementById('char-profile');
+// const charProfile = document.getElementById('char-profile'); // ★ 下の行に変更（profileText要素を取得）
+const charProfileTextElement = document.getElementById('char-profile'); // ★ IDが 'char-profile' の要素を取得
 const startChatButton = document.getElementById('start-chat-button');
 const profileError = document.getElementById('profile-error');
 const chatView = document.getElementById('chat-view');
@@ -26,7 +27,7 @@ const chatForm = document.getElementById('chat-input-form');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const chatHeaderTitle = document.getElementById('chat-header-title');
-const chatError = document.getElementById('chat-error');
+const chatError = document.getElementById('chat-error'); // chat-error 要素も取得（エラー表示用）
 
 // --- State ---
 let isAiResponding = false;
@@ -48,6 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     else { console.error("Chat form not found"); }
     if(userInput) {
         userInput.addEventListener('keypress', handleInputKeyPress);
+        // Optional: Adjust textarea height dynamically
+        // userInput.addEventListener('input', adjustTextareaHeight);
     } else { console.error("User input not found"); }
 });
 
@@ -76,10 +79,24 @@ async function loadProfileData(id) {
 }
 
 function displayProfileData(data) {
-    if (!profileView || !charName || !charProfile || !charIcon || !chatHeaderTitle) { console.error("Profile display elements not found."); return; }
+    // ★ charProfile を charProfileTextElement に変更
+    if (!profileView || !charName || !charProfileTextElement || !charIcon || !chatHeaderTitle) {
+         console.error("Profile display elements not found.");
+         return;
+    }
     if (!data) { displayProfileError("キャラクターデータが見つかりません。"); return; };
+
     charName.textContent = data.name || '名前なし';
-    charProfile.textContent = data.profileText || 'プロフィール情報がありません。';
+
+    // --- ★ 置換処理を追加 ---
+    // 1. Firestoreから取得した生のprofileTextを取得 (なければデフォルトメッセージ)
+    const rawProfileText = data.profileText || 'プロフィール情報がありません。';
+    // 2. 文字列中の '\\n' を実際の改行コード '\n' に置換
+    const processedProfileText = rawProfileText.replaceAll('\\n', '\n');
+    // 3. 置換処理後のテキストを profileText を表示するHTML要素に設定
+    charProfileTextElement.textContent = processedProfileText;
+    // --- ★ 置換処理ここまで ---
+
     if (data.iconUrl) {
         charIcon.src = data.iconUrl;
         charIcon.alt = `${data.name || 'キャラクター'}のアイコン`;
@@ -92,9 +109,10 @@ function displayProfileData(data) {
 }
 
 function displayProfileError(message) {
-    if (!profileView || !charName || !charProfile || !profileError || !startChatButton) return;
+    // ★ charProfile を charProfileTextElement に変更
+    if (!profileView || !charName || !charProfileTextElement || !profileError || !startChatButton) return;
     charName.textContent = 'エラー';
-    charProfile.textContent = 'キャラクター情報を読み込めませんでした。';
+    charProfileTextElement.textContent = 'キャラクター情報を読み込めませんでした。'; // エラー時もここ
     const displayMessage = Object.values(ERROR_MESSAGES).includes(message) ? message : ERROR_MESSAGES.PROFILE_FETCH_ERROR;
     profileError.textContent = displayMessage;
     profileError.style.display = 'block';
@@ -102,11 +120,14 @@ function displayProfileError(message) {
 }
 
 function showLoadingState(isLoading) {
+    // ★ charProfile を charProfileTextElement に変更
     if(isLoading) {
         if(charName) charName.textContent = '読み込み中...';
-        if(charProfile) charProfile.textContent = '情報を取得しています...';
+        if(charProfileTextElement) charProfileTextElement.textContent = '情報を取得しています...'; // ローディング時もここ
         if(startChatButton) startChatButton.disabled = true;
     }
+     // Note: You might want an 'else' block here to re-enable the button
+     // if loading finishes successfully, but loadProfileData already handles that.
 }
 
 // --- View Switching ---
@@ -120,15 +141,17 @@ function startChat() {
     setTimeout(() => {
         if (chatHistory) {
             if (chatHistory.children.length === 0) {
+                // Only add welcome message if history is truly empty
                 appendMessage('ai', WELCOME_MESSAGE);
             } else {
+                // If history exists, just scroll to the end
                 const lastMessage = chatHistory.lastElementChild;
                 if (lastMessage) {
                     lastMessage.scrollIntoView({ behavior: 'auto', block: 'end' });
                 }
             }
         }
-    }, 100);
+    }, 100); // Short delay to ensure rendering
 }
 
 // --- Event Handlers (Chat) ---
@@ -145,9 +168,11 @@ function sendMessage() {
 
     appendMessage('user', userMessageText);
     userInput.value = '';
+    // adjustTextareaHeight(); // Adjust height after clearing
     userInput.focus();
     showTypingIndicator();
     setAiResponding(true);
+    clearChatError(); // Clear previous errors on new message send
 
     fetch(API_ENDPOINT, {
         method: 'POST',
@@ -156,18 +181,25 @@ function sendMessage() {
     })
     .then(response => {
         if (!response.ok) {
-            if (response.status === 403) {
-                throw new Error(ERROR_MESSAGES.LIMIT_REACHED);
-            }
-            if (response.status === 404) {
-                return response.json().then(errData => {
-                     throw new Error(errData.error || ERROR_MESSAGES.INVALID_ID);
-                }).catch(() => { throw new Error(ERROR_MESSAGES.INVALID_ID); });
-            }
+            // Try to parse JSON error regardless of status code for more info
             return response.json().then(errData => {
-                 const errorMsg = errData.error || `サーバーエラーが発生しました (HTTP ${response.status})`;
-                 throw new Error(errorMsg);
-            }).catch(() => { throw new Error(`HTTP error! status: ${response.status}`); });
+                 console.error("API Error Response Data:", errData); // Log error data
+                 let specificError = ERROR_MESSAGES.GENERAL; // Default
+                 if (response.status === 403) {
+                     specificError = ERROR_MESSAGES.LIMIT_REACHED;
+                 } else if (response.status === 404) {
+                    specificError = errData.error || ERROR_MESSAGES.INVALID_ID;
+                 } else if (errData.error) {
+                     specificError = errData.error; // Use error from API if available
+                 } else {
+                     specificError = `サーバーエラー (HTTP ${response.status})`;
+                 }
+                 throw new Error(specificError);
+            }).catch((parseError) => {
+                 // If JSON parsing fails, throw a generic HTTP error
+                 console.error("Failed to parse error JSON or other fetch error:", parseError);
+                 throw new Error(`HTTP error! status: ${response.status}`);
+            });
         }
         return response.json();
     })
@@ -175,18 +207,15 @@ function sendMessage() {
         if (data && data.reply) {
             appendMessage('ai', data.reply);
         } else {
+            // Even if response is ok (2xx), reply might be missing
+            console.warn("API response OK, but 'reply' field missing.", data);
             throw new Error(ERROR_MESSAGES.API_RESPONSE);
         }
     })
     .catch(error => {
         console.error('Error sending message or processing response:', error);
-        let displayError = ERROR_MESSAGES.GENERAL;
-        if (Object.values(ERROR_MESSAGES).includes(error.message)) {
-             displayError = error.message;
-        } else if (error.message.includes('HTTP') || error.message.includes('Failed to fetch')) {
-             displayError = ERROR_MESSAGES.NETWORK;
-        }
-        appendChatError(displayError);
+        // Use the specific error message thrown from the .then block
+        appendChatError(error.message || ERROR_MESSAGES.GENERAL);
     })
     .finally(() => {
         removeTypingIndicator();
@@ -197,41 +226,51 @@ function sendMessage() {
 // --- State Management (Chat) ---
 function setAiResponding(isResponding) {
     isAiResponding = isResponding;
-    if (characterId && sendButton && userInput) {
-         sendButton.disabled = isResponding;
-         userInput.disabled = isResponding;
-    }
+    // Check elements exist before disabling
+    if (sendButton) sendButton.disabled = isResponding;
+    if (userInput) userInput.disabled = isResponding;
 }
 
 // --- UI Update Functions (Chat) ---
 function appendMessage(senderType, text) {
     if(!chatHistory) return;
     const messageId = `${senderType}-${Date.now()}`;
-    const fragment = document.createDocumentFragment();
+    const fragment = document.createDocumentFragment(); // Use fragment for efficiency
     const messageRow = createMessageRowElement(senderType, messageId);
     const icon = createIconElement(senderType);
-    const content = createMessageContentElement(senderType, text);
+    const content = createMessageContentElement(senderType, text); // Pass text here
 
-    if (senderType === 'ai' && characterIconUrl) {
-        icon.style.backgroundImage = `url('${characterIconUrl}')`;
-        icon.style.backgroundColor = 'transparent';
-    } else {
-        icon.style.backgroundImage = '';
-        icon.style.backgroundColor = '';
+    // Set AI icon if available
+    if (senderType === 'ai' || senderType === 'error') { // AI or Error message uses character icon
+        if (characterIconUrl) {
+             icon.style.backgroundImage = `url('${characterIconUrl}')`;
+             icon.style.backgroundColor = 'transparent';
+        } else {
+            // Keep default placeholder only if no icon URL
+             icon.style.backgroundImage = '';
+             icon.style.backgroundColor = ''; // Let CSS handle placeholder color
+        }
+         if(senderType === 'error') {
+            // Override icon for explicit error type if needed by CSS/design
+            icon.classList.add('message__icon--error'); // Add specific class if needed
+         }
     }
+    // User icon is handled by CSS typically
 
+    // Append order based on sender
     if (senderType === 'user') { messageRow.appendChild(content); messageRow.appendChild(icon); }
-    else { messageRow.appendChild(icon); messageRow.appendChild(content); }
+    else { messageRow.appendChild(icon); messageRow.appendChild(content); } // ai or error
+
     fragment.appendChild(messageRow);
     chatHistory.appendChild(fragment);
 
-    // Use scrollIntoView with behavior: 'auto'
-    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' }); // ★ Changed to 'auto'
+    // Use scrollIntoView with behavior: 'auto' for smoother scrolling in most cases
+    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' });
 }
 
 function createMessageRowElement(senderType, messageId) {
     const element = document.createElement('div');
-    element.className = `message message--${senderType === 'user' ? 'user' : 'ai'}`;
+    element.className = `message message--${senderType === 'user' ? 'user' : 'ai'}`; // Default to 'ai' class for non-user
     element.dataset.messageId = messageId;
      if (senderType === 'error') { element.classList.add('message--error'); }
     return element;
@@ -240,6 +279,7 @@ function createMessageRowElement(senderType, messageId) {
 function createIconElement(senderType) {
     const element = document.createElement('div');
     element.className = 'message__icon';
+     // Specific sender icon styles are best handled in CSS or background image set in appendMessage
     return element;
 }
 
@@ -248,38 +288,51 @@ function createMessageContentElement(senderType, text) {
     content.className = 'message__content';
     const bubble = document.createElement('div');
     bubble.className = 'message__bubble';
+
+    // Simple Markdown-like link handling: [text](url)
+    // Regex to find markdown links
     const linkRegex = /\[([^\]]+)]\((https?:\/\/[^\s)]+)\)/g;
+
+    // Check if text contains links AND is not an error message
     if (senderType !== 'error' && linkRegex.test(text)) {
-        bubble.innerHTML = text.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+         // Replace markdown links with actual <a> tags
+         bubble.innerHTML = text.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     } else {
-        bubble.textContent = text;
+         // If no links or it's an error, just set text content (safer for preventing XSS)
+         bubble.textContent = text;
     }
+
     const timestamp = document.createElement('div');
     timestamp.className = 'message__timestamp';
     timestamp.textContent = getCurrentTime();
+
     content.appendChild(bubble);
+    // Only add timestamp for non-error messages
     if (senderType !== 'error') { content.appendChild(timestamp); }
     return content;
 }
+
 
 function showTypingIndicator() {
     if (typingIndicatorId || !chatHistory) return;
     const messageId = `typing-${Date.now()}`;
     typingIndicatorId = messageId;
     const fragment = document.createDocumentFragment();
-    const messageRow = createMessageRowElement('ai', messageId);
+    const messageRow = createMessageRowElement('ai', messageId); // Use 'ai' type for layout
     const icon = createIconElement('ai');
     if (characterIconUrl) { icon.style.backgroundImage = `url('${characterIconUrl}')`; icon.style.backgroundColor = 'transparent'; }
+
     const content = document.createElement('div'); content.className = 'message__content';
     const bubble = document.createElement('div'); bubble.className = 'message__bubble';
     const indicator = document.createElement('div'); indicator.className = 'typing-indicator';
     indicator.innerHTML = `<span class="typing-indicator__dot"></span><span class="typing-indicator__dot"></span><span class="typing-indicator__dot"></span>`;
     bubble.appendChild(indicator); content.appendChild(bubble);
+
     messageRow.appendChild(icon); messageRow.appendChild(content);
     fragment.appendChild(messageRow); chatHistory.appendChild(fragment);
 
-    // Use scrollIntoView with behavior: 'auto'
-    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' }); // ★ Changed to 'auto'
+    // Scroll the indicator into view
+    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' });
 }
 
 function removeTypingIndicator() {
@@ -292,30 +345,59 @@ function removeTypingIndicator() {
 
 function appendChatError(message) {
     if (chatHistory) {
-        appendMessage('error', message);
+         removeTypingIndicator(); // Remove typing indicator if an error occurs
+         appendMessage('error', message); // Use the specific 'error' type
     } else {
+        // Fallback if chat history isn't available (e.g., error during init)
         console.error("Chat history element not found, cannot append error:", message);
-        if(profileError) {
+        if(profileError) { // Display error in profile section as a last resort
             profileError.textContent = `チャットエラー: ${message}`;
             profileError.style.display = 'block';
         }
     }
 }
 
-// --- Utility Functions ---
-function getCurrentTime() {
-    return new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+function clearChatError() {
+    // Find and remove existing error messages from chat history
+    if(chatHistory) {
+        const errorMessages = chatHistory.querySelectorAll('.message--error');
+        errorMessages.forEach(el => el.remove());
+    }
+    // Also hide profile error if it was used as fallback
+    // if (profileError && profileError.textContent.startsWith('チャットエラー:')) {
+    //     profileError.textContent = '';
+    //     profileError.style.display = 'none';
+    // }
 }
 
-// scrollToBottom function is no longer needed
 
-// --- Function to get Character ID from URL ---
+// --- Utility Functions ---
+function getCurrentTime() {
+    return new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false }); // Use ja-JP for consistency
+}
+
+// Function to get Character ID from URL
 function getUniqueIdFromUrl() {
     try {
         const params = new URLSearchParams(window.location.search);
-        const potentialId = params.get('char_id');
+        // Try 'char_id' first, then fall back to 'id' for compatibility
+        const potentialId = params.get('char_id') || params.get('id');
         console.log("Extracted Character ID from query params:", potentialId);
-        if (!potentialId) { console.error("Could not find 'char_id' parameter."); return null; }
-        return potentialId;
-    } catch (e) { console.error("Error extracting Character ID:", e); return null; }
+        if (!potentialId) {
+             console.error("Could not find 'char_id' or 'id' parameter in URL.");
+             return null;
+        }
+        // Basic validation (e.g., check if it's not empty string)
+        return potentialId.trim() || null;
+    } catch (e) {
+        console.error("Error extracting Character ID from URL:", e);
+        return null;
+    }
 }
+
+// Optional: Function to adjust textarea height dynamically
+// function adjustTextareaHeight() {
+//     if (!userInput) return;
+//     userInput.style.height = 'auto'; // Reset height
+//     userInput.style.height = userInput.scrollHeight + 'px'; // Set to scroll height
+// }
