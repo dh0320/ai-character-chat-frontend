@@ -1,4 +1,4 @@
-// script.js (高さ自動調整 & コピー機能 追加版)
+// script.js (scrollIntoView behavior:auto 改善版)
 
 // --- Constants and Configuration ---
 const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api';
@@ -10,8 +10,7 @@ const ERROR_MESSAGES = {
     INVALID_ID: 'キャラクターが見つからないか、アクセスが許可されていません。',
     ID_FETCH_ERROR: 'URLからキャラクターIDを取得できませんでした。',
     PROFILE_FETCH_ERROR: 'キャラクター情報の取得に失敗しました。',
-    LIMIT_REACHED: 'このキャラクターとの会話上限に達しました。',
-    COPY_FAILED: 'コピーに失敗しました。', // コピー失敗メッセージ
+    LIMIT_REACHED: 'このキャラクターとの会話上限に達しました。'
 };
 
 // --- DOM Elements ---
@@ -24,18 +23,16 @@ const profileError = document.getElementById('profile-error');
 const chatView = document.getElementById('chat-view');
 const chatHistory = document.getElementById('chat-history');
 const chatForm = document.getElementById('chat-input-form');
-const userInput = document.getElementById('user-input'); // textarea
+const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const chatHeaderTitle = document.getElementById('chat-header-title');
-const chatError = document.getElementById('chat-error'); // エラー表示用 (もしあれば)
-const chatFooter = document.querySelector('.chat__footer'); // フッター要素を取得
+const chatError = document.getElementById('chat-error');
 
 // --- State ---
 let isAiResponding = false;
 let typingIndicatorId = null;
 let characterId = null;
 let characterIconUrl = null;
-let copyTimeoutId = null; // コピーフィードバック用タイマーID
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -45,142 +42,98 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     await loadProfileData(characterId);
-
     if(startChatButton) { startChatButton.addEventListener('click', startChat); }
     else { console.error("Start chat button not found"); }
-
     if(chatForm) { chatForm.addEventListener('submit', handleFormSubmit); }
     else { console.error("Chat form not found"); }
-
     if(userInput) {
         userInput.addEventListener('keypress', handleInputKeyPress);
-        // ★ 高さ自動調整のためのイベントリスナーを追加
-        userInput.addEventListener('input', autoResizeTextarea);
-        // ★ 初期高さを設定
-        autoResizeTextarea.call(userInput); // ページ読み込み時にも高さを調整
     } else { console.error("User input not found"); }
-
-    // ★ メッセージコピーのためのイベントリスナーを追加 (イベントデリゲーション)
-    if (chatHistory) {
-        chatHistory.addEventListener('click', handleBubbleClick);
-    } else { console.error("Chat history not found for copy listener."); }
-
-    // ★ モバイル表示時にフッターの高さが変わることに対応するため、
-    // chat__history の padding-bottom を動的に調整するリスナーを追加
-    if (window.matchMedia("(max-width: 767px)").matches && chatFooter && chatHistory) {
-        const resizeObserver = new ResizeObserver(updateHistoryPadding);
-        resizeObserver.observe(chatFooter);
-        // 初期値も設定
-        updateHistoryPadding();
-    }
 });
 
 // --- Profile Loading ---
-// (変更なし)
-async function loadProfileData(id) { /* ... existing code ... */ }
-function displayProfileData(data) { /* ... existing code ... */ }
-function displayProfileError(message) { /* ... existing code ... */ }
-function showLoadingState(isLoading) { /* ... existing code ... */ }
+async function loadProfileData(id) {
+    showLoadingState(true);
+    if(profileError) profileError.style.display = 'none';
+    try {
+        const response = await fetch(`${API_ENDPOINT}?id=${id}`, { method: 'GET' });
+        if (!response.ok) {
+            let errorMsg = ERROR_MESSAGES.PROFILE_FETCH_ERROR;
+            try {
+                const errData = await response.json();
+                errorMsg = (response.status === 404 && errData.error) ? ERROR_MESSAGES.INVALID_ID : (errData.error || `HTTP ${response.status}`);
+            } catch (e) { errorMsg = `HTTP ${response.status}`; }
+            throw new Error(errorMsg);
+        }
+        const profileData = await response.json();
+        displayProfileData(profileData);
+    } catch (error) {
+        console.error("Failed to load profile data:", error);
+        displayProfileError(error.message || ERROR_MESSAGES.PROFILE_FETCH_ERROR);
+    } finally {
+         showLoadingState(false);
+    }
+}
+
+function displayProfileData(data) {
+    if (!profileView || !charName || !charProfile || !charIcon || !chatHeaderTitle) { console.error("Profile display elements not found."); return; }
+    if (!data) { displayProfileError("キャラクターデータが見つかりません。"); return; };
+    charName.textContent = data.name || '名前なし';
+    charProfile.textContent = data.profileText || 'プロフィール情報がありません。';
+    if (data.iconUrl) {
+        charIcon.src = data.iconUrl;
+        charIcon.alt = `${data.name || 'キャラクター'}のアイコン`;
+        characterIconUrl = data.iconUrl;
+    } else {
+        charIcon.alt = 'アイコンなし'; charIcon.src = ''; characterIconUrl = null;
+    }
+    chatHeaderTitle.textContent = data.name || 'AIキャラクター';
+    if(startChatButton) startChatButton.disabled = false;
+}
+
+function displayProfileError(message) {
+    if (!profileView || !charName || !charProfile || !profileError || !startChatButton) return;
+    charName.textContent = 'エラー';
+    charProfile.textContent = 'キャラクター情報を読み込めませんでした。';
+    const displayMessage = Object.values(ERROR_MESSAGES).includes(message) ? message : ERROR_MESSAGES.PROFILE_FETCH_ERROR;
+    profileError.textContent = displayMessage;
+    profileError.style.display = 'block';
+    startChatButton.disabled = true;
+}
+
+function showLoadingState(isLoading) {
+    if(isLoading) {
+        if(charName) charName.textContent = '読み込み中...';
+        if(charProfile) charProfile.textContent = '情報を取得しています...';
+        if(startChatButton) startChatButton.disabled = true;
+    }
+}
 
 // --- View Switching ---
-// (変更なし)
-function startChat() { /* ... existing code ... */ }
+function startChat() {
+    if(!profileView || !chatView || !userInput) { console.error("Cannot switch views."); return; }
+    profileView.classList.add('hidden');
+    chatView.classList.remove('hidden');
+    userInput.focus();
 
+    // Initial scroll and welcome message logic
+    setTimeout(() => {
+        if (chatHistory) {
+            if (chatHistory.children.length === 0) {
+                appendMessage('ai', WELCOME_MESSAGE);
+            } else {
+                const lastMessage = chatHistory.lastElementChild;
+                if (lastMessage) {
+                    lastMessage.scrollIntoView({ behavior: 'auto', block: 'end' });
+                }
+            }
+        }
+    }, 100);
+}
 
 // --- Event Handlers (Chat) ---
 function handleFormSubmit(event) { event.preventDefault(); sendMessage(); }
-
-function handleInputKeyPress(event) {
-    // Shift+Enter で改行、Enterのみで送信
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-    }
-}
-
-// ★ Textarea 高さ自動調整
-function autoResizeTextarea() {
-    // 一時的に高さを自動にしてscrollHeightを取得
-    this.style.height = 'auto';
-    // scrollHeightに基づいて高さを設定 (CSSのmax-heightを超えないように)
-    const newHeight = Math.min(this.scrollHeight, parseInt(getComputedStyle(this).maxHeight));
-    this.style.height = newHeight + 'px';
-    // スクロールバーが表示される場合（max-heightに達した場合）
-    this.style.overflowY = (this.scrollHeight > newHeight) ? 'auto' : 'hidden';
-
-    // モバイルでフッターの高さが変わる場合、履歴のpaddingを更新 (ResizeObserverで代替)
-    // if (window.matchMedia("(max-width: 767px)").matches && chatFooter && chatHistory) {
-    //     updateHistoryPadding();
-    // }
-}
-
-// ★ メッセージコピーイベントハンドラ (イベントデリゲーション)
-async function handleBubbleClick(event) {
-    const bubble = event.target.closest('.message__bubble');
-
-    // エラーメッセージやタイムスタンプなどはコピー対象外
-    if (!bubble || bubble.closest('.message--error')) {
-        return;
-    }
-
-    // タイピングインジケーターも除外
-    if (bubble.querySelector('.typing-indicator')) {
-        return;
-    }
-
-    // リンクをクリックした場合はコピーしない (リンクを開く動作を優先)
-    if (event.target.tagName === 'A') {
-        return;
-    }
-
-    // 表示されているテキストを取得 (innerTextの方が適切)
-    const textToCopy = bubble.innerText;
-
-    if (!textToCopy) return;
-
-    try {
-        await navigator.clipboard.writeText(textToCopy);
-        showCopyFeedback(bubble); // コピー成功フィードバック
-    } catch (err) {
-        console.error('Failed to copy text: ', err);
-        // 必要であればユーザーにエラーメッセージを表示
-        // appendChatError(ERROR_MESSAGES.COPY_FAILED); // 例
-        alert(ERROR_MESSAGES.COPY_FAILED); // 簡単なアラート
-    }
-}
-
-// ★ コピー成功フィードバック表示
-function showCopyFeedback(bubbleElement) {
-    // 既存のタイムアウトがあればクリア
-    if (copyTimeoutId) {
-        clearTimeout(copyTimeoutId);
-        // 前回のフィードバックが残っていれば削除
-        document.querySelectorAll('.message__bubble.copied').forEach(el => el.classList.remove('copied'));
-    }
-
-    bubbleElement.classList.add('copied');
-
-    // 1.5秒後にクラスを削除
-    copyTimeoutId = setTimeout(() => {
-        bubbleElement.classList.remove('copied');
-        copyTimeoutId = null;
-    }, 1500);
-}
-
-// ★ モバイルでフッターの高さに応じて履歴の padding-bottom を調整する関数
-function updateHistoryPadding() {
-    if (chatFooter && chatHistory && window.matchMedia("(max-width: 767px)").matches) {
-        const footerHeight = chatFooter.offsetHeight;
-        const basePadding = parseInt(getComputedStyle(chatHistory).paddingLeft); // 他のpadding値を取得
-        chatHistory.style.paddingBottom = `${footerHeight + basePadding}px`;
-        // スクロール位置を調整（必要に応じて）
-        // chatHistory.scrollTop = chatHistory.scrollHeight;
-    } else if (chatHistory) {
-        // デスクトップ表示などではデフォルトのpaddingに戻す（必要なら）
-        // chatHistory.style.paddingBottom = ''; // スタイル属性を削除
-    }
-}
-
+function handleInputKeyPress(event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); } }
 
 // --- Core Logic (Chat) ---
 function sendMessage() {
@@ -192,14 +145,9 @@ function sendMessage() {
 
     appendMessage('user', userMessageText);
     userInput.value = '';
-    // ★ 送信後にテキストエリアの高さをリセット
-    autoResizeTextarea.call(userInput);
     userInput.focus();
     showTypingIndicator();
     setAiResponding(true);
-
-    // ★ スクロール処理 (最下部付近にいる場合のみスムーズスクロール)
-    scrollToBottomIfNeeded(chatHistory);
 
     fetch(API_ENDPOINT, {
         method: 'POST',
@@ -207,22 +155,23 @@ function sendMessage() {
         body: JSON.stringify({ message: userMessageText, id: characterId })
     })
     .then(response => {
-        // (既存のエラーハンドリング)
         if (!response.ok) {
-            if (response.status === 403) { throw new Error(ERROR_MESSAGES.LIMIT_REACHED); }
+            if (response.status === 403) {
+                throw new Error(ERROR_MESSAGES.LIMIT_REACHED);
+            }
             if (response.status === 404) {
-                return response.json().then(errData => { throw new Error(errData.error || ERROR_MESSAGES.INVALID_ID); })
-                       .catch(() => { throw new Error(ERROR_MESSAGES.INVALID_ID); });
+                return response.json().then(errData => {
+                     throw new Error(errData.error || ERROR_MESSAGES.INVALID_ID);
+                }).catch(() => { throw new Error(ERROR_MESSAGES.INVALID_ID); });
             }
             return response.json().then(errData => {
-                   const errorMsg = errData.error || `サーバーエラーが発生しました (HTTP ${response.status})`;
-                   throw new Error(errorMsg);
+                 const errorMsg = errData.error || `サーバーエラーが発生しました (HTTP ${response.status})`;
+                 throw new Error(errorMsg);
             }).catch(() => { throw new Error(`HTTP error! status: ${response.status}`); });
         }
         return response.json();
     })
     .then(data => {
-        removeTypingIndicator(); // ★ AI応答受信後にタイピングインジケーター削除
         if (data && data.reply) {
             appendMessage('ai', data.reply);
         } else {
@@ -231,24 +180,28 @@ function sendMessage() {
     })
     .catch(error => {
         console.error('Error sending message or processing response:', error);
-        removeTypingIndicator(); // ★ エラー時もタイピングインジケーター削除
         let displayError = ERROR_MESSAGES.GENERAL;
         if (Object.values(ERROR_MESSAGES).includes(error.message)) {
              displayError = error.message;
         } else if (error.message.includes('HTTP') || error.message.includes('Failed to fetch')) {
              displayError = ERROR_MESSAGES.NETWORK;
         }
-        appendChatError(displayError); // エラーメッセージをチャットに追加
+        appendChatError(displayError);
     })
     .finally(() => {
-        // removeTypingIndicator(); ここではなく、応答受信後かエラー発生時に削除する
+        removeTypingIndicator();
         setAiResponding(false);
     });
 }
 
 // --- State Management (Chat) ---
-// (変更なし)
-function setAiResponding(isResponding) { /* ... existing code ... */ }
+function setAiResponding(isResponding) {
+    isAiResponding = isResponding;
+    if (characterId && sendButton && userInput) {
+         sendButton.disabled = isResponding;
+         userInput.disabled = isResponding;
+    }
+}
 
 // --- UI Update Functions (Chat) ---
 function appendMessage(senderType, text) {
@@ -259,37 +212,38 @@ function appendMessage(senderType, text) {
     const icon = createIconElement(senderType);
     const content = createMessageContentElement(senderType, text);
 
-    // アイコン設定 (変更なし)
-    if (senderType === 'ai' && characterIconUrl) { /* ... */ }
-    else { /* ... */ }
+    if (senderType === 'ai' && characterIconUrl) {
+        icon.style.backgroundImage = `url('${characterIconUrl}')`;
+        icon.style.backgroundColor = 'transparent';
+    } else {
+        icon.style.backgroundImage = '';
+        icon.style.backgroundColor = '';
+    }
 
     if (senderType === 'user') { messageRow.appendChild(content); messageRow.appendChild(icon); }
     else { messageRow.appendChild(icon); messageRow.appendChild(content); }
     fragment.appendChild(messageRow);
     chatHistory.appendChild(fragment);
 
-    // ★ スクロール処理を呼び出す
-    scrollToBottomIfNeeded(chatHistory);
+    // Use scrollIntoView with behavior: 'auto'
+    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' }); // ★ Changed to 'auto'
 }
 
 function createMessageRowElement(senderType, messageId) {
-    // (変更なし)
     const element = document.createElement('div');
     element.className = `message message--${senderType === 'user' ? 'user' : 'ai'}`;
     element.dataset.messageId = messageId;
-    if (senderType === 'error') { element.classList.add('message--error'); }
+     if (senderType === 'error') { element.classList.add('message--error'); }
     return element;
 }
 
 function createIconElement(senderType) {
-    // (変更なし)
     const element = document.createElement('div');
     element.className = 'message__icon';
     return element;
 }
 
 function createMessageContentElement(senderType, text) {
-    // (変更なし - リンク処理含む)
     const content = document.createElement('div');
     content.className = 'message__content';
     const bubble = document.createElement('div');
@@ -298,9 +252,7 @@ function createMessageContentElement(senderType, text) {
     if (senderType !== 'error' && linkRegex.test(text)) {
         bubble.innerHTML = text.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     } else {
-        // ★ XSS対策としてtextContentを使うのが基本だが、意図的にHTML（リンク）を許可している
-        // もしプレーンテキストのみ表示する場合は bubble.textContent = text; にする
-        bubble.textContent = text; // または bubble.innerHTML = sanitizeHTML(text); のようなサニタイズ処理
+        bubble.textContent = text;
     }
     const timestamp = document.createElement('div');
     timestamp.className = 'message__timestamp';
@@ -315,21 +267,19 @@ function showTypingIndicator() {
     const messageId = `typing-${Date.now()}`;
     typingIndicatorId = messageId;
     const fragment = document.createDocumentFragment();
-    const messageRow = createMessageRowElement('ai', messageId); // 見た目はAIメッセージ
+    const messageRow = createMessageRowElement('ai', messageId);
     const icon = createIconElement('ai');
     if (characterIconUrl) { icon.style.backgroundImage = `url('${characterIconUrl}')`; icon.style.backgroundColor = 'transparent'; }
     const content = document.createElement('div'); content.className = 'message__content';
     const bubble = document.createElement('div'); bubble.className = 'message__bubble';
-    // タイピングインジケーターはコピー対象外にするため、クリックイベントが伝播しないようにするのも手
-    bubble.style.cursor = 'default';
     const indicator = document.createElement('div'); indicator.className = 'typing-indicator';
     indicator.innerHTML = `<span class="typing-indicator__dot"></span><span class="typing-indicator__dot"></span><span class="typing-indicator__dot"></span>`;
     bubble.appendChild(indicator); content.appendChild(bubble);
     messageRow.appendChild(icon); messageRow.appendChild(content);
     fragment.appendChild(messageRow); chatHistory.appendChild(fragment);
 
-    // ★ スクロール処理を呼び出す
-    scrollToBottomIfNeeded(chatHistory);
+    // Use scrollIntoView with behavior: 'auto'
+    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' }); // ★ Changed to 'auto'
 }
 
 function removeTypingIndicator() {
@@ -341,33 +291,31 @@ function removeTypingIndicator() {
 }
 
 function appendChatError(message) {
-    // (変更なし)
     if (chatHistory) {
         appendMessage('error', message);
-        // ★ エラー時もスクロール
-        scrollToBottomIfNeeded(chatHistory);
-    } else { /* ... */ }
+    } else {
+        console.error("Chat history element not found, cannot append error:", message);
+        if(profileError) {
+            profileError.textContent = `チャットエラー: ${message}`;
+            profileError.style.display = 'block';
+        }
+    }
 }
 
 // --- Utility Functions ---
 function getCurrentTime() {
-    // (変更なし)
     return new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-// ★ スクロールが必要か判断して実行する関数
-function scrollToBottomIfNeeded(container) {
-    if (!container) return;
-    const threshold = 100; // 自動スクロールを発動する閾値 (px) - コンテナの底からこの距離以内ならスクロール
-    const isScrolledNearBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + threshold;
-
-    // ユーザーが上にスクロールして履歴を見ている場合は、勝手にスクロールしない
-    if (isScrolledNearBottom) {
-        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-    }
-}
-
+// scrollToBottom function is no longer needed
 
 // --- Function to get Character ID from URL ---
-// (変更なし)
-function getUniqueIdFromUrl() { /* ... existing code ... */ }
+function getUniqueIdFromUrl() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const potentialId = params.get('char_id');
+        console.log("Extracted Character ID from query params:", potentialId);
+        if (!potentialId) { console.error("Could not find 'char_id' parameter."); return null; }
+        return potentialId;
+    } catch (e) { console.error("Error extracting Character ID:", e); return null; }
+}
