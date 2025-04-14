@@ -6,11 +6,11 @@
 /* --- CSS Variables --- */
 :root {
     /* Colors */
-    --color-bg: #575757;
+    --color-bg: #f8f9fa;
     --color-bg-end: #f1f3f5;
     --color-surface: #ffffff;
     --color-text-primary: #212529;
-    --color-text-secondary: #6c757d;
+    --color-text-secondary: #42474d;
     --color-border: #dee2e6;
     --color-accent: #004080;
     --color-accent-hover: #003366;
