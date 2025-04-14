@@ -1,6 +1,8 @@
+# requirements.txt (Firestore対応版)
 functions-framework==3.*
 requests
 google-generativeai>=0.3 # Gemini API (google-ai) ライブラリ
-gspread>=5.0.0
-google-auth>=2.0.0
-google-auth-oauthlib>=0.5.0 # gspreadの認証で必要になる場合がある
+google-cloud-firestore # Firestore操作用ライブラリを追加
+# gspread>=5.0.0        # 削除またはコメントアウト
+google-auth>=2.0.0    # Firestoreクライアントが内部で使う可能性があるので残しても良い
+# google-auth-oauthlib>=0.5.0 # gspread用だったので削除またはコメントアウト
