@@ -1,4 +1,4 @@
-/* style.css (レイアウト修正 - PC ヘッダー/フッター固定対応) */
+/* style.css (レイアウト修正 - PC版ヘッダー/フッター固定対応) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -79,7 +79,6 @@ html {
     -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
 }
 body {
-    /* ★ Ensure body has no margin */
     margin: 0;
     padding: 0;
     font-family: var(--font-family-base);
@@ -87,26 +86,20 @@ body {
     background-attachment: fixed;
     color: var(--color-text-primary);
     line-height: var(--line-height-base);
-    /* ★ Use min-height to ensure it covers viewport at least */
     min-height: 100vh;
-    display: flex; /* Keep flex for centering .container if needed */
+    display: flex;
     justify-content: center;
     align-items: center;
     background-color: var(--color-bg-end);
     overscroll-behavior-y: contain; /* Prevent pull-to-refresh issues */
-    /* ★ Remove fixed height, let content determine height */
 }
 .container {
     width: 100%;
-    /* ★ Ensure container takes full height from flex parent (body) */
-    height: 100vh; /* ★ Use 100vh for full viewport height */
-    max-height: 100vh; /* ★ Prevent container from exceeding viewport height */
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* ★ Ensure container has no padding affecting layout */
     padding: 0;
-    /* ★ Added for child % height to work reliably */
     align-self: stretch; /* Stretch to fill flex parent height */
 }
 
@@ -116,42 +109,39 @@ body {
 /* --- Shared Section Styling --- */
 .view-section {
     width: 100%;
-    /* ★ Ensure section takes full height from container */
-    height: 100%; /* ★ Inherit full height */
+    height: 100%;
     max-width: var(--chat-container-max-width);
     margin: 0 auto;
     background-color: var(--color-surface);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-md);
-    /* ★ Move overflow control to inner elements like .chat or .profile */
-    /* overflow: hidden; */
+    /* overflow: hidden; */ /* ★ Modified: overflowは子要素で制御 */
     position: relative;
     display: flex;
     flex-direction: column;
-    /* ★ Ensure height is strictly followed */
-    max-height: 100%;
 }
 
 /* --- Profile View Styling --- */
-/* Profile view structure */
 .profile {
     text-align: center;
     display: flex;
     flex-direction: column;
     height: 100%; /* Fill view-section */
     width: 100%;
-    overflow: hidden; /* Contain sticky header/footer AND enable scrolling on child */
+    overflow: hidden; /* Contain sticky header/footer */
 }
 .profile__header {
-    position: sticky; /* Make header sticky within .profile */
+    /* ★ Modified: Apply sticky positioning for both desktop and mobile */
+    position: sticky;
     top: 0;
     z-index: 10;
-    background-color: var(--color-surface); /* ★ Add background for sticky */
+    /* --- Existing styles --- */
+    background-color: var(--color-surface);
     padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
     flex-shrink: 0;
     text-align: center;
     width: 100%;
-    /* Safe area for profile header (applied on mobile) */
+    /* Mobile-specific safe area padding is handled in the media query */
 }
 .profile__icon {
     width: 150px;
@@ -170,18 +160,20 @@ body {
     margin-bottom: var(--spacing-sm);
 }
 .profile__card {
+    /* ★ Modified: Ensure flex-grow and overflow-y are set for scrolling */
     flex-grow: 1; /* Takes remaining space between header and footer */
     overflow-y: auto; /* Enable scrolling for profile text */
+    /* --- Existing styles --- */
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding: var(--spacing-lg);
-    padding-right: calc(var(--spacing-lg) + 8px); /* Space for scrollbar (adjust if needed) */
+    padding-right: calc(var(--spacing-lg) + 6px); /* Space for scrollbar */
     background-color: var(--color-surface);
     scroll-padding-top: 10px;
     scroll-padding-bottom: 10px; /* Padding for scroll ends */
     width: 100%;
     min-height: 0; /* For flexbox */
-    /* Safe area for profile card content (applied on mobile) */
+    /* Mobile-specific safe area padding is handled in the media query */
 }
 .profile__text {
     font-size: 0.95rem;
@@ -191,16 +183,18 @@ body {
     text-align: left;
 }
 .profile__footer {
-    position: sticky; /* Make footer sticky within .profile */
+    /* ★ Modified: Apply sticky positioning for both desktop and mobile */
+    position: sticky;
     bottom: 0;
     z-index: 10;
-    background-color: var(--color-surface); /* ★ Add background for sticky */
+    /* --- Existing styles --- */
+    background-color: var(--color-surface);
     padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl) var(--spacing-lg);
     border-top: 1px solid var(--color-border);
     flex-shrink: 0;
     text-align: center;
     width: 100%;
-    /* Safe area for profile footer (applied on mobile) */
+    /* Mobile-specific safe area padding is handled in the media query */
 }
 .profile__button {
     display: inline-block;
@@ -228,19 +222,24 @@ body {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    overflow: hidden; /* ★ Contain header/footer/history */
+    overflow: hidden; /* Contain header/footer/history */
 }
 .chat__container {
     width: 100%; height: 100%; background-color: var(--color-surface);
     border-radius: inherit;
-    position: relative; /* ★ Context for sticky/fixed elements */
+    position: relative; /* Context for sticky/fixed elements and stacking */
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* ★ Ensure container clips content */
+    overflow: hidden; /* Ensure container clips content */
 }
 
 /* Default (Desktop) Styles */
 .chat__header {
+    /* ★ Modified: Add sticky positioning for desktop */
+    position: sticky;
+    top: 0;
+    z-index: 10; /* Ensure it's above history */
+    /* --- Existing styles --- */
     height: var(--header-height);
     background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover));
     color: var(--color-accent-text);
@@ -249,9 +248,6 @@ body {
     padding: 0 var(--spacing-lg);
     flex-shrink: 0;
     box-shadow: var(--shadow-sm);
-    z-index: 10; /* Above history */
-    position: sticky; /* ★ Make header sticky on desktop */
-    top: 0;          /* ★ Stick to top */
     width: 100%;
     justify-content: space-between;
     gap: var(--spacing-md);
@@ -274,20 +270,27 @@ body {
 .chat__turn-counter.limit-reached { color: #ffcdd2; font-weight: var(--font-weight-medium); }
 
 .chat__history {
-    position: relative; /* Ensure stacking context */
+    /* ★ Modified: Ensure flex-grow and overflow-y for scrolling */
+    flex-grow: 1; /* Make history take available space */
+    overflow-y: auto; /* Enable scrolling */
+    /* --- Existing styles --- */
+    position: relative; /* Keep relative positioning */
     width: 100%;
-    flex-grow: 1; /* ★ Make history take available space */
     padding: var(--spacing-md) var(--spacing-lg); /* Default padding */
-    overflow-y: auto; /* ★ Enable scrolling */
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    min-height: 0; /* ★ Prevent flexbox overflow issues */
+    min-height: 0; /* Prevent flexbox overflow issues */
     background-color: var(--color-surface);
     scroll-padding-bottom: var(--spacing-md); /* Space at scroll end */
-    z-index: 1; /* ★ Ensure history is behind sticky header/footer */
+    z-index: 1; /* Ensure history is behind sticky header/footer */
 }
 
 .chat__footer {
+    /* ★ Modified: Add sticky positioning for desktop */
+    position: sticky;
+    bottom: 0;
+    z-index: 5; /* Above history */
+    /* --- Existing styles --- */
     height: var(--footer-height);
     background-color: #f1f3f5;
     border-top: 1px solid var(--color-border);
@@ -295,9 +298,6 @@ body {
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    z-index: 5; /* Above history */
-    position: sticky; /* ★ Make footer sticky on desktop */
-    bottom: 0;       /* ★ Stick to bottom */
     width: 100%;
 }
 
@@ -314,17 +314,16 @@ body {
         box-shadow: none;
         max-width: 100%;
         width: 100%;
-        height: 100%; /* ★ Take full height from container */
-        overflow: hidden; /* ★ Re-apply overflow hidden */
+        height: 100%; /* Take full height from container */
+        overflow: hidden; /* Re-apply overflow hidden */
         padding: 0;
         margin: 0;
     }
 
-    /* Profile view mobile adjustments */
+    /* Profile view mobile adjustments (Keep using sticky, just adjust padding) */
     .profile { height: 100%; width: 100%; display: flex; flex-direction: column; overflow: hidden; }
     .profile__header {
-        position: sticky; top: 0; z-index: 10; background-color: var(--color-surface); flex-shrink: 0; text-align: center; width: 100%;
-        /* ★ Adjust padding for safe area using max() */
+        /* Sticky is already applied in default style, only adjust padding here */
         padding-top: max(var(--spacing-lg), env(safe-area-inset-top));
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
         padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
@@ -333,36 +332,32 @@ body {
     .profile__icon { width: 120px; height: 120px; margin-top: 0; }
     .profile__name { font-size: 1.5rem; }
     .profile__card {
-        flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; background-color: var(--color-surface); scroll-padding-top: 5px; scroll-padding-bottom: 5px; width: 100%; min-height: 0;
-        /* ★ Adjust padding for safe area using max() */
+        /* flex-grow and overflow-y are already applied in default style, only adjust padding */
         padding-top: var(--spacing-lg);
         padding-bottom: var(--spacing-lg); /* Content padding */
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
-        /* ★ Adjust right padding for scrollbar on mobile */
-        padding-right: calc(max(var(--spacing-lg), env(safe-area-inset-right)) + 4px);
+        padding-right: calc(max(var(--spacing-lg), env(safe-area-inset-right)) + 4px); /* scrollbar */
     }
     .profile__footer {
-        position: sticky; bottom: 0; z-index: 10; background-color: var(--color-surface); border-top: 1px solid var(--color-border); flex-shrink: 0; text-align: center; width: 100%;
-        /* ★ Adjust padding for safe area using max() */
+        /* Sticky is already applied in default style, only adjust padding here */
         padding-top: var(--spacing-md);
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
         padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
         padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom)); /* Add safe area */
     }
 
-    /* Chat view mobile adjustments */
+    /* Chat view mobile adjustments (Keep using fixed) */
     .chat { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
     .chat__container { border-radius: 0; height: 100%; position: relative; overflow: hidden; display: flex; flex-direction: column; }
 
-    /* ★ Mobile uses fixed positioning, desktop uses sticky. Keep mobile as fixed. */
     .chat__header {
-        position: fixed; /* ★ Keep fixed for mobile */
+        /* ★ Modified: Keep position: fixed for mobile */
+        position: fixed;
+        /* --- Remaining mobile styles (unchanged) --- */
         top: 0; left: 0; right: 0;
         z-index: 100; /* Highest */
         box-shadow: var(--shadow-sm);
-        /* ★ Use variable height */
-        height: calc(var(--header-height) + env(safe-area-inset-top)); /* ★ Adjust height for safe area */
-        /* ★ Apply safe area via padding INSIDE the header */
+        height: var(--header-height);
         padding-top: env(safe-area-inset-top);
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
         padding-right: max(var(--spacing-md), env(safe-area-inset-right));
@@ -378,6 +373,7 @@ body {
     /* chat__turn-counter styles inherited */
 
     .chat__history {
+        /* ★ Modified: Keep adjustments for fixed header/footer and safe areas */
         flex-grow: 1; /* Take remaining space */
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
@@ -385,7 +381,6 @@ body {
         scroll-behavior: smooth;
         z-index: 1; /* Behind fixed elements */
         width: 100%;
-        /* ★ CRUCIAL: Adjust padding for fixed header/footer AND safe areas */
         padding-top: calc(var(--header-height) + env(safe-area-inset-top) + var(--spacing-md));
         padding-bottom: calc(var(--footer-height) + env(safe-area-inset-bottom) + var(--spacing-md));
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
@@ -393,16 +388,16 @@ body {
     }
 
     .chat__footer {
-        position: fixed; /* ★ Keep fixed for mobile */
+        /* ★ Modified: Keep position: fixed for mobile */
+        position: fixed;
+        /* --- Remaining mobile styles (unchanged) --- */
         bottom: 0; left: 0; right: 0;
         z-index: 100; /* Highest */
         border-top: 1px solid var(--color-border);
         background-color: #f1f3f5;
         display: flex;
         align-items: center;
-        /* ★ Use variable height and adjust for safe area */
-        height: calc(var(--footer-height) + env(safe-area-inset-bottom));
-        /* ★ Apply safe area via padding INSIDE the footer */
+        height: var(--footer-height);
         padding-bottom: env(safe-area-inset-bottom);
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
         padding-right: max(var(--spacing-md), env(safe-area-inset-right));
@@ -460,22 +455,15 @@ body {
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
 /* Scrollbar Styling (Webkit) - Light Theme */
-/* Default (Desktop) Scrollbars */
+/* Default Scrollbars (Desktop) */
 .chat__history::-webkit-scrollbar { width: 8px; }
 .chat__history::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
-.profile__card::-webkit-scrollbar { width: 8px; /* ★ デスクトップは少し太く */ }
-.profile__card::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-.profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
+.profile__card::-webkit-scrollbar { width: 6px; }
+.profile__card::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+.profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
 .profile__card::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
 
-/* Mobile scrollbar moved inside mobile media query (already done) */
-@media (max-width: 767px) {
-    .profile__card::-webkit-scrollbar { width: 4px; }
-    .profile__card::-webkit-scrollbar-track { background: transparent; /* モバイルではトラックを非表示にすることも */ }
-    .profile__card::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 2px; }
-    .chat__history::-webkit-scrollbar { width: 6px; }
-    .chat__history::-webkit-scrollbar-track { background: transparent; /* モバイルではトラックを非表示にすることも */ }
-    .chat__history::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 3px; }
-}
+/* Mobile scrollbar definitions moved inside mobile media query (already done) */
+/* Note: The styles inside @media (max-width: 767px) block will override these for mobile */
