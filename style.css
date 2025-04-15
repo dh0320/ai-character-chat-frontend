@@ -1,4 +1,4 @@
-/* style.css (レイアウト修正 - プロファイル画面スクロール挙動修正版) */
+/* style.css (レイアウト修正 - スマホ ヘッダー/フッター重なり対応版) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -79,26 +79,34 @@ html {
     -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
 }
 body {
-    margin: 0; padding: 0;
+    /* ★ Ensure body has no margin */
+    margin: 0;
+    padding: 0;
     font-family: var(--font-family-base);
     background-image: linear-gradient(to bottom, var(--color-bg), var(--color-bg-end));
     background-attachment: fixed;
     color: var(--color-text-primary);
     line-height: var(--line-height-base);
-    min-height: 100vh; /* ★ Use min-height */
-    display: flex;
+    /* ★ Use min-height to ensure it covers viewport at least */
+    min-height: 100vh;
+    display: flex; /* Keep flex for centering .container if needed */
     justify-content: center;
     align-items: center;
     background-color: var(--color-bg-end);
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: contain; /* Prevent pull-to-refresh issues */
+    /* ★ Remove fixed height, let content determine height */
 }
 .container {
-    width: 100%; height: 100%;
+    width: 100%;
+    /* ★ Ensure container takes full height from flex parent (body) */
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    /* ★ Ensure container has no padding affecting layout */
     padding: 0;
-    align-self: stretch;
+    /* ★ Added for child % height to work reliably */
+    align-self: stretch; /* Stretch to fill flex parent height */
 }
 
 /* --- View Control --- */
@@ -106,38 +114,45 @@ body {
 
 /* --- Shared Section Styling --- */
 .view-section {
-    width: 100%; height: 100%;
+    width: 100%;
+    /* ★ Ensure section takes full height from container */
+    height: 100%;
     max-width: var(--chat-container-max-width);
     margin: 0 auto;
     background-color: var(--color-surface);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-md);
+    /* ★ Move overflow control to inner elements like .chat */
+    /* overflow: hidden; */
     position: relative;
     display: flex;
     flex-direction: column;
-    /* overflow: hidden; ★ Removed from here, apply to specific children if needed */
 }
 
 /* --- Profile View Styling --- */
+/* Profile view structure */
 .profile {
     text-align: center;
-    display: flex; /* ★ Use flexbox */
-    flex-direction: column; /* ★ Stack vertically */
+    display: flex;
+    flex-direction: column;
     height: 100%; /* Fill view-section */
     width: 100%;
-    /* overflow: hidden; ★ Removed: Allow card to scroll */
+    overflow: hidden; /* Contain sticky header/footer */
 }
 .profile__header {
-    /* position: sticky; ★ Removed: No longer sticky */
-    z-index: 10; /* Keep for potential stacking */
+    position: sticky; /* Make header sticky within .profile */
+    top: 0;
+    z-index: 10;
     background-color: var(--color-surface);
     padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
-    flex-shrink: 0; /* ★ Prevent shrinking */
+    flex-shrink: 0;
     text-align: center;
     width: 100%;
+    /* Safe area for profile header (applied on mobile) */
 }
 .profile__icon {
-    width: 150px; height: 150px;
+    width: 150px;
+    height: 150px;
     border-radius: var(--border-radius-circle);
     object-fit: cover;
     margin: 0 auto var(--spacing-lg) auto;
@@ -152,17 +167,18 @@ body {
     margin-bottom: var(--spacing-sm);
 }
 .profile__card {
-    flex-grow: 1; /* ★ Takes remaining vertical space */
-    overflow-y: auto; /* ★ Enable vertical scroll ONLY when content overflows */
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    flex-grow: 1; /* Takes remaining space between header and footer */
+    overflow-y: auto; /* Enable scrolling for profile text */
+    -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding: var(--spacing-lg);
     padding-right: calc(var(--spacing-lg) + 6px); /* Space for scrollbar */
     background-color: var(--color-surface);
-    scroll-padding-top: 10px; /* Padding at scroll start */
-    scroll-padding-bottom: 10px; /* Padding at scroll end */
+    scroll-padding-top: 10px;
+    scroll-padding-bottom: 10px; /* Padding for scroll ends */
     width: 100%;
-    min-height: 0; /* ★ Necessary for flex-grow and overflow to work correctly */
+    min-height: 0; /* For flexbox */
+    /* Safe area for profile card content (applied on mobile) */
 }
 .profile__text {
     font-size: 0.95rem;
@@ -172,24 +188,36 @@ body {
     text-align: left;
 }
 .profile__footer {
-    /* position: sticky; ★ Removed: No longer sticky */
-    z-index: 10; /* Keep for potential stacking */
+    position: sticky; /* Make footer sticky within .profile */
+    bottom: 0;
+    z-index: 10;
     background-color: var(--color-surface);
     padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl) var(--spacing-lg);
     border-top: 1px solid var(--color-border);
-    flex-shrink: 0; /* ★ Prevent shrinking */
+    flex-shrink: 0;
     text-align: center;
     width: 100%;
+    /* Safe area for profile footer (applied on mobile) */
 }
-.profile__button { /* Styles unchanged */ }
-.profile__button:hover { /* Styles unchanged */ }
-.profile__button:active { /* Styles unchanged */ }
-.profile__button:disabled { /* Styles unchanged */ }
-#profile-error.error-message { /* Styles unchanged */ }
+.profile__button {
+    display: inline-block;
+    padding: var(--spacing-sm) var(--spacing-xl);
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-accent-text);
+    background-color: var(--color-accent);
+    border: none;
+    border-radius: var(--border-radius-pill);
+    cursor: pointer;
+    transition: background-color var(--transition-duration) ease, transform var(--transition-duration) ease;
+}
+.profile__button:hover { background-color: var(--color-accent-hover); transform: translateY(-1px); }
+.profile__button:active { transform: translateY(0px) scale(0.98); }
+.profile__button:disabled { background-color: var(--color-icon-placeholder); color: var(--color-text-secondary); cursor: not-allowed; transform: none; }
+#profile-error.error-message { margin-top: var(--spacing-sm); max-width: calc(100% - 2 * var(--spacing-lg)); margin-left: auto; margin-right: auto; display: block; }
 
 
 /* --- Chat View Styling --- */
-/* Chat view styles remain the same as the previous good version */
 .chat {
     padding: 0; margin: 0;
     border-radius: inherit;
@@ -197,7 +225,7 @@ body {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    overflow: hidden; /* ★ Contain fixed header/footer and scrolling history */
+    overflow: hidden; /* ★ Contain header/footer/history */
 }
 .chat__container {
     width: 100%; height: 100%; background-color: var(--color-surface);
@@ -213,45 +241,84 @@ body {
     height: var(--header-height);
     background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover));
     color: var(--color-accent-text);
-    display: flex; align-items: center; padding: 0 var(--spacing-lg); flex-shrink: 0;
-    box-shadow: var(--shadow-sm); z-index: 10; position: relative; width: 100%;
-    justify-content: space-between; gap: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-lg);
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+    z-index: 10; /* Above history */
+    position: relative; /* Default non-fixed */
+    width: 100%;
+    justify-content: space-between;
+    gap: var(--spacing-md);
 }
 .chat__title {
-    font-size: 1.1rem; font-weight: var(--font-weight-medium); white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; flex-grow: 1; min-width: 0;
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    min-width: 0;
 }
-.chat__turn-counter { font-size: var(--font-size-xs); color: rgba(255, 255, 255, 0.85); white-space: nowrap; flex-shrink: 0; }
+.chat__turn-counter {
+    font-size: var(--font-size-xs);
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
 .chat__turn-counter.limit-reached { color: #ffcdd2; font-weight: var(--font-weight-medium); }
 
 .chat__history {
-    position: relative; width: 100%; flex-grow: 1;
-    overflow-y: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
-    min-height: 0; background-color: var(--color-surface); scroll-padding-bottom: var(--spacing-md);
-    z-index: 1; /* ★ Behind fixed header/footer */
-    /* Default padding, will be overridden on mobile */
-    padding: var(--spacing-md) var(--spacing-lg);
+    position: relative; /* Ensure stacking context */
+    width: 100%;
+    flex-grow: 1; /* ★ Make history take available space */
+    padding: var(--spacing-md) var(--spacing-lg); /* Default padding */
+    overflow-y: auto; /* ★ Enable scrolling */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0; /* ★ Prevent flexbox overflow issues */
+    background-color: var(--color-surface);
+    scroll-padding-bottom: var(--spacing-md); /* Space at scroll end */
+    z-index: 1; /* ★ Ensure history is behind fixed header/footer */
 }
 
 .chat__footer {
-    height: var(--footer-height); background-color: #f1f3f5; border-top: 1px solid var(--color-border);
-    padding: var(--spacing-sm) var(--spacing-md); flex-shrink: 0; display: flex; align-items: center;
-    z-index: 5; position: relative; width: 100%;
+    height: var(--footer-height);
+    background-color: #f1f3f5;
+    border-top: 1px solid var(--color-border);
+    padding: var(--spacing-sm) var(--spacing-md);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    z-index: 5; /* Above history, below header if needed */
+    position: relative; /* Default non-fixed */
+    width: 100%;
 }
 
 /* --- Mobile Specific Layout (LINE style) --- */
 @media (max-width: 767px) {
-    .container { padding: 0; align-self: stretch; height: 100%; }
-    .view-section { border-radius: 0; box-shadow: none; max-width: 100%; width: 100%; height: 100%; padding: 0; margin: 0; }
+    /* body { min-height: 100vh; } Ensure body takes height */
+    .container {
+        padding: 0;
+        align-self: stretch;
+        height: 100%; /* Ensure container takes full height */
+    }
+    .view-section {
+        border-radius: 0;
+        box-shadow: none;
+        max-width: 100%;
+        width: 100%;
+        height: 100%; /* ★ Take full height from container */
+        overflow: hidden; /* ★ Re-apply overflow hidden */
+        padding: 0;
+        margin: 0;
+    }
 
     /* Profile view mobile adjustments */
-    .profile {
-        height: 100%; width: 100%; display: flex; flex-direction: column;
-        /* No overflow hidden needed here, handled by card */
-    }
+    .profile { height: 100%; width: 100%; display: flex; flex-direction: column; overflow: hidden; }
     .profile__header {
-        /* No longer sticky */
-        flex-shrink: 0; text-align: center; width: 100%; background-color: var(--color-surface); z-index: 10;
+        position: sticky; top: 0; z-index: 10; background-color: var(--color-surface); flex-shrink: 0; text-align: center; width: 100%;
         /* ★ Adjust padding for safe area using max() */
         padding-top: max(var(--spacing-lg), env(safe-area-inset-top));
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
@@ -261,9 +328,7 @@ body {
     .profile__icon { width: 120px; height: 120px; margin-top: 0; }
     .profile__name { font-size: 1.5rem; }
     .profile__card {
-        flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
-        background-color: var(--color-surface); scroll-padding-top: 5px; scroll-padding-bottom: 5px;
-        width: 100%; min-height: 0;
+        flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; background-color: var(--color-surface); scroll-padding-top: 5px; scroll-padding-bottom: 5px; width: 100%; min-height: 0;
         /* ★ Adjust padding for safe area using max() */
         padding-top: var(--spacing-lg);
         padding-bottom: var(--spacing-lg); /* Content padding */
@@ -271,9 +336,7 @@ body {
         padding-right: calc(max(var(--spacing-lg), env(safe-area-inset-right)) + 4px); /* scrollbar */
     }
     .profile__footer {
-        /* No longer sticky */
-        border-top: 1px solid var(--color-border); flex-shrink: 0; text-align: center; width: 100%;
-        background-color: var(--color-surface); z-index: 10;
+        position: sticky; bottom: 0; z-index: 10; background-color: var(--color-surface); border-top: 1px solid var(--color-border); flex-shrink: 0; text-align: center; width: 100%;
         /* ★ Adjust padding for safe area using max() */
         padding-top: var(--spacing-md);
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
@@ -281,31 +344,41 @@ body {
         padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom)); /* Add safe area */
     }
 
-    /* Chat view mobile adjustments (Kept from previous good version) */
+    /* Chat view mobile adjustments */
     .chat { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
     .chat__container { border-radius: 0; height: 100%; position: relative; overflow: hidden; display: flex; flex-direction: column; }
 
     .chat__header {
         position: fixed; /* ★ Keep fixed */
         top: 0; left: 0; right: 0;
-        z-index: 100; box-shadow: var(--shadow-sm);
-        height: var(--header-height); /* ★ Use variable */
-        padding-top: env(safe-area-inset-top); /* ★ Apply safe area via padding */
+        z-index: 100; /* Highest */
+        box-shadow: var(--shadow-sm);
+        /* ★ Use variable height */
+        height: var(--header-height);
+        /* ★ Apply safe area via padding INSIDE the header */
+        padding-top: env(safe-area-inset-top);
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
         padding-right: max(var(--spacing-md), env(safe-area-inset-right));
-        padding-bottom: 0;
-        display: flex; align-items: center;
+        padding-bottom: 0; /* No bottom padding needed */
+        display: flex;
+        align-items: center; /* Center content vertically */
         background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover));
         color: var(--color-accent-text);
-        justify-content: space-between; gap: var(--spacing-sm);
+        justify-content: space-between;
+        gap: var(--spacing-sm);
     }
     .chat__title { font-size: 1rem; }
+    /* chat__turn-counter styles inherited */
 
     .chat__history {
-        flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-        background-color: var(--color-surface); scroll-behavior: smooth;
-        z-index: 1; width: 100%;
-        /* ★ CRUCIAL: Padding for fixed header/footer AND safe areas */
+        flex-grow: 1; /* Take remaining space */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        background-color: var(--color-surface);
+        scroll-behavior: smooth;
+        z-index: 1; /* Behind fixed elements */
+        width: 100%;
+        /* ★ CRUCIAL: Adjust padding for fixed header/footer AND safe areas */
         padding-top: calc(var(--header-height) + env(safe-area-inset-top) + var(--spacing-md));
         padding-bottom: calc(var(--footer-height) + env(safe-area-inset-bottom) + var(--spacing-md));
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
@@ -315,13 +388,18 @@ body {
     .chat__footer {
         position: fixed; /* ★ Keep fixed */
         bottom: 0; left: 0; right: 0;
-        z-index: 100; border-top: 1px solid var(--color-border);
-        background-color: #f1f3f5; display: flex; align-items: center;
-        height: var(--footer-height); /* ★ Use variable */
-        padding-bottom: env(safe-area-inset-bottom); /* ★ Apply safe area via padding */
+        z-index: 100; /* Highest */
+        border-top: 1px solid var(--color-border);
+        background-color: #f1f3f5;
+        display: flex;
+        align-items: center;
+        /* ★ Use variable height */
+        height: var(--footer-height);
+        /* ★ Apply safe area via padding INSIDE the footer */
+        padding-bottom: env(safe-area-inset-bottom);
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
         padding-right: max(var(--spacing-md), env(safe-area-inset-right));
-        padding-top: var(--spacing-sm);
+        padding-top: var(--spacing-sm); /* Keep original top padding */
     }
 
     /* Scrollbar width adjustments for mobile */
@@ -331,7 +409,9 @@ body {
 
 /* --- Shared Input/Button Styles --- */
 .chat__input-form { display: flex; align-items: center; width: 100%; height: 100%; gap: var(--spacing-sm); }
-.chat__input { flex-grow: 1; padding: var(--spacing-sm) var(--spacing-lg); border: 1px solid var(--color-border); border-radius: var(--border-radius-pill); background-color: var(--color-surface); color: var(--color-text-primary); font-size: 1rem; outline: none; transition: border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease; -webkit-appearance: none; -moz-appearance: none; appearance: none; min-height: 38px; line-height: 1.4; align-self: stretch; resize: none; overflow-y: auto; max-height: 100px; }
+.chat__input {
+    flex-grow: 1; padding: var(--spacing-sm) var(--spacing-lg); border: 1px solid var(--color-border); border-radius: var(--border-radius-pill); background-color: var(--color-surface); color: var(--color-text-primary); font-size: 1rem; outline: none; transition: border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease; -webkit-appearance: none; -moz-appearance: none; appearance: none; min-height: 38px; line-height: 1.4; align-self: stretch; resize: none; overflow-y: auto; max-height: 100px;
+}
 .chat__input:focus, .chat__input:focus-visible { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2); }
 .chat__input::placeholder { color: var(--color-text-secondary); }
 .chat__send-button { background-color: var(--color-accent); color: var(--color-accent-text); border: none; border-radius: var(--border-radius-circle); width: 48px; height: 48px; flex-shrink: 0; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color var(--transition-duration) ease; }
@@ -373,18 +453,18 @@ body {
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
 /* Scrollbar Styling (Webkit) - Light Theme */
+/* Default Scrollbars */
 .chat__history::-webkit-scrollbar { width: 8px; }
 .chat__history::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
-/* ★ Profile card scrollbar */
 .profile__card::-webkit-scrollbar { width: 6px; }
 .profile__card::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
 .profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
 .profile__card::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
 
+/* Mobile scrollbar moved inside mobile media query (already done) */
 @media (max-width: 767px) {
-    /* Mobile scrollbar widths */
     .profile__card::-webkit-scrollbar { width: 4px; }
     .chat__history::-webkit-scrollbar { width: 6px; }
 }
