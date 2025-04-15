@@ -1,4 +1,4 @@
-/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応 & 回り込み改善 & 上下端張り付き対応 & 残り回数表示対応) */
+/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応 & 回り込み改善 & 上下端張り付き対応 & 残り回数表示対応 & モバイルヘッダー重なり修正) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -130,7 +130,6 @@ body {
 }
 
 /* --- Profile View Styling --- */
-/* ... (プロファイル関連のスタイルは変更なし) ... */
 .profile {
     text-align: center;
     display: flex;
@@ -172,7 +171,7 @@ body {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding: var(--spacing-lg);
-    padding-right: calc(var(--spacing-lg) + 6px);
+    padding-right: calc(var(--spacing-lg) + 6px); /* scrollbar space */
     background-color: var(--color-surface);
     scroll-padding-top: 10px;
     scroll-padding-bottom: 10px;
@@ -299,7 +298,7 @@ body {
     -webkit-overflow-scrolling: touch;
     min-height: 0;
     background-color: var(--color-surface);
-    scroll-padding-bottom: var(--spacing-md);
+    scroll-padding-bottom: var(--spacing-md); /* Keep space at the bottom when scrolling */
     z-index: 1;
 }
 .chat__footer {
@@ -315,7 +314,7 @@ body {
         box-shadow: none;
         max-width: 100%;
         width: 100%; /* ★ Ensure full width */
-        height: 100vh;             /* ★ Ensure full viewport height */
+        height: 100vh;              /* ★ Ensure full viewport height */
         height: -webkit-fill-available; /* ★ iOS Safari address bar handling */
         overflow: hidden;
         /* ★ Ensure no padding/margin interfering with full height */
@@ -396,7 +395,9 @@ body {
         position: static;
         width: 100%;
         /* ★ Adjust padding for fixed header/footer AND safe areas */
-        padding-top: calc(var(--effective-header-height) + env(safe-area-inset-top) + var(--spacing-md));
+        /* ▼▼▼ 修正箇所 ▼▼▼ ヘッダー下のスペースを少し広げる */
+        padding-top: calc(var(--effective-header-height) + env(safe-area-inset-top) + var(--spacing-lg));
+        /* ▲▲▲ 修正箇所 ▲▲▲ */
         padding-bottom: calc(var(--effective-footer-height) + env(safe-area-inset-bottom) + var(--spacing-md));
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
         padding-right: max(var(--spacing-md), env(safe-area-inset-right));
@@ -437,29 +438,34 @@ body {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    min-height: 38px;
-    line-height: 1.4;
-    align-self: stretch;
-    resize: none;
-    overflow-y: auto;
-    max-height: 100px;
+    min-height: 38px; /* Ensure minimum height */
+    line-height: 1.4; /* Adjust line height for textarea */
+    align-self: stretch; /* Make textarea fill footer height */
+    resize: none; /* Disable manual resizing */
+    overflow-y: auto; /* Add scroll if content exceeds max-height */
+    max-height: 100px; /* Limit max height for textarea */
 }
 .chat__input:focus, .chat__input:focus-visible { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2); }
 .chat__input::placeholder { color: var(--color-text-secondary); }
-.chat__send-button { background-color: var(--color-accent); color: var(--color-accent-text); border: none; border-radius: var(--border-radius-circle); width: 48px; height: 48px; flex-shrink: 0; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color var(--transition-duration) ease; }
+.chat__send-button { background-color: var(--color-accent); color: var(--color-accent-text); border: none; border-radius: var(--border-radius-circle); width: 48px; height: 48px; flex-shrink: 0; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color var(--transition-duration) ease; align-self: flex-end; margin-bottom: calc((var(--footer-height) - 48px) / 2 - var(--spacing-sm) / 2) ; /* Align button vertically in footer */}
 .chat__send-button:hover { background-color: var(--color-accent-hover); }
 .chat__send-button:disabled { background-color: var(--color-icon-placeholder); cursor: not-allowed; }
 .chat__send-button svg { width: 24px; height: 24px; fill: currentColor; }
+@media (max-width: 767px) {
+    .chat__input { min-height: 36px; } /* Slightly smaller min-height on mobile */
+    .chat__send-button { width: 42px; height: 42px; align-self: flex-end; margin-bottom: calc((var(--effective-footer-height) - 42px) / 2 - var(--spacing-sm) / 2); }
+    .chat__send-button svg { width: 22px; height: 22px; }
+}
+
 
 /* --- Message Styling --- */
-/* ... (メッセージ関連のスタイルは変更なし) ... */
 .message { display: flex; align-items: flex-start; margin-bottom: var(--spacing-lg); max-width: var(--message-max-width); opacity: 0; animation: fadeIn var(--message-animate-duration) ease forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .message__icon { width: 40px; height: 40px; border-radius: var(--border-radius-circle); background-color: var(--color-icon-placeholder); background-size: cover; background-position: center; background-repeat: no-repeat; flex-shrink: 0; margin-top: 0; box-shadow: var(--shadow-sm); }
 .message--user .message__icon { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236c757d"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'); background-color: transparent; }
 .message--error .message__icon { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23dc3545"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>'); background-color: transparent; }
-.message__content { margin: 0 var(--spacing-md); display: flex; flex-direction: column; min-width: 0; }
-.message__bubble { padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius-lg); word-wrap: break-word; line-height: var(--line-height-base); box-shadow: var(--shadow-sm); position: relative; max-width: 100%; background-color: var(--color-ai-bubble-bg); color: var(--color-text-primary); }
+.message__content { margin: 0 var(--spacing-md); display: flex; flex-direction: column; min-width: 0; /* Prevent content overflow issues */ }
+.message__bubble { padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius-lg); word-wrap: break-word; /* Ensure long words wrap */ line-height: var(--line-height-base); box-shadow: var(--shadow-sm); position: relative; max-width: 100%; /* Ensure bubble doesn't exceed container */ background-color: var(--color-ai-bubble-bg); color: var(--color-text-primary); }
 .message__bubble a { color: var(--link-color); text-decoration: underline; }
 .message__bubble a:hover { text-decoration: none; }
 .message__timestamp { font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: var(--spacing-xs); padding: 0 var(--spacing-sm); }
@@ -494,7 +500,6 @@ body {
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
 /* Scrollbar Styling (Webkit) - Light Theme */
-/* ... (スクロールバーのスタイルは変更なし) ... */
 .chat__history::-webkit-scrollbar { width: 8px; }
 .chat__history::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
@@ -504,8 +509,8 @@ body {
 .profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
 .profile__card::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
 
-/* Mobile scrollbar moved inside media query */
+/* Mobile scrollbar styles moved inside the mobile media query for clarity */
 @media (max-width: 767px) {
-    .profile__card::-webkit-scrollbar { width: 4px; }
-    .chat__history::-webkit-scrollbar { width: 6px; }
+    .profile__card::-webkit-scrollbar { width: 4px; } /* Thinner scrollbar for profile on mobile */
+    .chat__history::-webkit-scrollbar { width: 6px; } /* Slightly thinner scrollbar for chat on mobile */
 }
