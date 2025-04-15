@@ -1,8 +1,8 @@
-// script.js (replaceAll 適用 & scrollIntoView behavior:auto 改善版)
+// script.js (replaceAll 適用 & scrollIntoView behavior:auto 改善版 & sendMessage を async/await で修正)
 
 // --- Constants and Configuration ---
 const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api';
-const WELCOME_MESSAGE = 'チャットを開始します！お名前を教えてください！';
+const WELCOME_MESSAGE = 'チャットを開始します！';
 const ERROR_MESSAGES = {
     NETWORK: 'ネットワークエラーが発生しました。接続を確認してください。',
     API_RESPONSE: 'AIからの応答がありませんでした。',
@@ -17,7 +17,6 @@ const ERROR_MESSAGES = {
 const profileView = document.getElementById('profile-view');
 const charIcon = document.getElementById('char-icon');
 const charName = document.getElementById('char-name');
-// const charProfile = document.getElementById('char-profile'); // ★ 下の行に変更（profileText要素を取得）
 const charProfileTextElement = document.getElementById('char-profile'); // ★ IDが 'char-profile' の要素を取得
 const startChatButton = document.getElementById('start-chat-button');
 const profileError = document.getElementById('profile-error');
@@ -81,8 +80,8 @@ async function loadProfileData(id) {
 function displayProfileData(data) {
     // ★ charProfile を charProfileTextElement に変更
     if (!profileView || !charName || !charProfileTextElement || !charIcon || !chatHeaderTitle) {
-         console.error("Profile display elements not found.");
-         return;
+        console.error("Profile display elements not found.");
+        return;
     }
     if (!data) { displayProfileError("キャラクターデータが見つかりません。"); return; };
 
@@ -159,7 +158,10 @@ function handleFormSubmit(event) { event.preventDefault(); sendMessage(); }
 function handleInputKeyPress(event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); } }
 
 // --- Core Logic (Chat) ---
-function sendMessage() {
+// =========================================
+// ★★★ sendMessage 関数を async/await 版に修正 ★★★
+// =========================================
+async function sendMessage() {
     if (isAiResponding) return;
     if (!characterId) { appendChatError(ERROR_MESSAGES.ID_FETCH_ERROR); return; }
     if (!userInput) return;
@@ -168,60 +170,72 @@ function sendMessage() {
 
     appendMessage('user', userMessageText);
     userInput.value = '';
-    // adjustTextareaHeight(); // Adjust height after clearing
+    // adjustTextareaHeight(); // Adjust height after clearing (Optional)
     userInput.focus();
     showTypingIndicator();
     setAiResponding(true);
     clearChatError(); // Clear previous errors on new message send
 
-    fetch(API_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', },
-        body: JSON.stringify({ message: userMessageText, id: characterId })
-    })
-    .then(response => {
+    try {
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', },
+            body: JSON.stringify({ message: userMessageText, id: characterId })
+        });
+
+        // --- エラーレスポンス処理 ---
         if (!response.ok) {
-            // Try to parse JSON error regardless of status code for more info
-            return response.json().then(errData => {
-                 console.error("API Error Response Data:", errData); // Log error data
-                 let specificError = ERROR_MESSAGES.GENERAL; // Default
-                 if (response.status === 403) {
-                     specificError = ERROR_MESSAGES.LIMIT_REACHED;
-                 } else if (response.status === 404) {
-                    specificError = errData.error || ERROR_MESSAGES.INVALID_ID;
-                 } else if (errData.error) {
-                     specificError = errData.error; // Use error from API if available
-                 } else {
-                     specificError = `サーバーエラー (HTTP ${response.status})`;
-                 }
-                 throw new Error(specificError);
-            }).catch((parseError) => {
-                 // If JSON parsing fails, throw a generic HTTP error
-                 console.error("Failed to parse error JSON or other fetch error:", parseError);
-                 throw new Error(`HTTP error! status: ${response.status}`);
-            });
+            let errorPayload = null;
+            let errorMessage = `HTTP error! status: ${response.status}`; // デフォルトのエラーメッセージ
+
+            try {
+                // エラーレスポンスのボディ (JSON形式) を試みる
+                errorPayload = await response.json();
+                console.log("API Error Payload:", errorPayload); // デバッグ用にペイロードをログ出力
+
+                // ステータスコードやペイロードに応じてエラーメッセージを決定
+                if (response.status === 403) {
+                    errorMessage = ERROR_MESSAGES.LIMIT_REACHED; // ★期待するメッセージ
+                } else if (response.status === 404) {
+                    errorMessage = errorPayload?.error || ERROR_MESSAGES.INVALID_ID;
+                } else if (errorPayload?.error) {
+                    // APIが返したエラーメッセージを利用
+                    errorMessage = errorPayload.error;
+                }
+                // 必要に応じて他のステータスコードの処理を追加
+            } catch (jsonError) {
+                // エラーレスポンスのJSONパースに失敗した場合 (ボディが空、JSONでない等)
+                // errorMessage はデフォルトの "HTTP error! status: ..." のまま
+                console.error("Failed to parse error response JSON (this is expected if body is empty or not JSON):", jsonError);
+            }
+            // 決定したエラーメッセージで Error を throw する
+            throw new Error(errorMessage);
         }
-        return response.json();
-    })
-    .then(data => {
+
+        // --- 正常レスポンス処理 ---
+        const data = await response.json();
         if (data && data.reply) {
             appendMessage('ai', data.reply);
         } else {
-            // Even if response is ok (2xx), reply might be missing
+            // 正常レスポンスだが 'reply' がない場合
             console.warn("API response OK, but 'reply' field missing.", data);
             throw new Error(ERROR_MESSAGES.API_RESPONSE);
         }
-    })
-    .catch(error => {
-        console.error('Error sending message or processing response:', error);
-        // Use the specific error message thrown from the .then block
+
+    } catch (error) { // fetch 自体のエラー、または上で throw した Error をキャッチ
+        console.error('Error caught in sendMessage:', error); // エラー内容をコンソールに出力
+        // 最終的なエラーメッセージを画面に表示
         appendChatError(error.message || ERROR_MESSAGES.GENERAL);
-    })
-    .finally(() => {
+    } finally {
+        // 成功・失敗に関わらず実行
         removeTypingIndicator();
         setAiResponding(false);
-    });
+    }
 }
+// =========================================
+// ★★★ sendMessage 関数の修正 ここまで ★★★
+// =========================================
+
 
 // --- State Management (Chat) ---
 function setAiResponding(isResponding) {
@@ -252,7 +266,7 @@ function appendMessage(senderType, text) {
         }
          if(senderType === 'error') {
             // Override icon for explicit error type if needed by CSS/design
-            icon.classList.add('message__icon--error'); // Add specific class if needed
+             icon.classList.add('message__icon--error'); // Add specific class if needed
          }
     }
     // User icon is handled by CSS typically
@@ -344,6 +358,8 @@ function removeTypingIndicator() {
 }
 
 function appendChatError(message) {
+    // ログを追加して、渡されるメッセージを確認
+    console.log("Appending chat error with message:", message);
     if (chatHistory) {
          removeTypingIndicator(); // Remove typing indicator if an error occurs
          appendMessage('error', message); // Use the specific 'error' type
@@ -357,6 +373,7 @@ function appendChatError(message) {
     }
 }
 
+
 function clearChatError() {
     // Find and remove existing error messages from chat history
     if(chatHistory) {
@@ -365,8 +382,8 @@ function clearChatError() {
     }
     // Also hide profile error if it was used as fallback
     // if (profileError && profileError.textContent.startsWith('チャットエラー:')) {
-    //     profileError.textContent = '';
-    //     profileError.style.display = 'none';
+    //    profileError.textContent = '';
+    //    profileError.style.display = 'none';
     // }
 }
 
@@ -397,7 +414,7 @@ function getUniqueIdFromUrl() {
 
 // Optional: Function to adjust textarea height dynamically
 // function adjustTextareaHeight() {
-//     if (!userInput) return;
-//     userInput.style.height = 'auto'; // Reset height
-//     userInput.style.height = userInput.scrollHeight + 'px'; // Set to scroll height
+//    if (!userInput) return;
+//    userInput.style.height = 'auto'; // Reset height
+//    userInput.style.height = userInput.scrollHeight + 'px'; // Set to scroll height
 // }
