@@ -316,10 +316,11 @@ function appendMessage(senderType, text, shouldScroll = true) {
              console.log(`[appendMessage] No characterIconUrl found, using default styles.`);
         }
         if(senderType === 'error') {
-             icon.classList.add('message__icon--error');
+             icon.classList.add('message__icon--error'); // エラー用SVGをCSSで表示
         }
     } else if (senderType === 'user') {
          console.log(`[appendMessage] Sender is user, skipping background image.`);
+         // ユーザーアイコンはCSSでデフォルトSVGが設定されている
     }
     // --- ログ追加ここまで ---
 
@@ -343,13 +344,14 @@ function createMessageRowElement(senderType, messageId) {
     // ↓↓↓ 一旦 senderType のまま使う (CSS確認推奨)
     element.className = `message message--${senderType === 'user' ? 'user' : 'ai'}`; // 'ai' or 'user'
     element.dataset.messageId = messageId;
-     if (senderType === 'error') { element.classList.add('message--error'); } // error は別クラス
+    if (senderType === 'error') { element.classList.add('message--error'); } // error は別クラス
     return element;
 }
 
 function createIconElement(senderType) {
     const element = document.createElement('div');
     element.className = 'message__icon';
+    // senderTypeに応じたデフォルトアイコンはCSSで管理 (.message--user .message__icon, .message--error .message__icon)
     return element;
 }
 
@@ -359,13 +361,16 @@ function createMessageContentElement(senderType, text) {
     const bubble = document.createElement('div');
     bubble.className = 'message__bubble';
 
+    // Convert potential markdown links [text](url) to HTML links
     const linkRegex = /\[([^\]]+)]\((https?:\/\/[^\s)]+)\)/g;
+    // Convert newlines to <br> tags
     const processedText = text.replaceAll('\n', '<br>');
 
+    // Only process links if sender is not 'error'
     if (senderType !== 'error' && linkRegex.test(processedText)) {
-         bubble.innerHTML = processedText.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        bubble.innerHTML = processedText.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     } else {
-         bubble.innerHTML = processedText;
+        bubble.innerHTML = processedText; // Just set the text (newlines already converted)
     }
 
     const timestamp = document.createElement('div');
@@ -373,6 +378,7 @@ function createMessageContentElement(senderType, text) {
     timestamp.textContent = getCurrentTime();
 
     content.appendChild(bubble);
+    // Only add timestamp if not an error message
     if (senderType !== 'error') { content.appendChild(timestamp); }
     return content;
 }
@@ -385,15 +391,16 @@ function showTypingIndicator() {
     const fragment = document.createDocumentFragment();
     // タイピングインジケーターは 'ai' として表示
     const messageRow = createMessageRowElement('ai', messageId);
-    const icon = createIconElement('ai');
+    const icon = createIconElement('ai'); // AIアイコン用の要素を作成
 
+    // AIアイコンURLがあれば設定
     if (characterIconUrl) {
         icon.style.backgroundImage = `url('${characterIconUrl}')`;
         icon.style.backgroundColor = 'transparent';
         console.log('[showTypingIndicator] Set icon background for typing indicator.');
     } else {
-         icon.style.backgroundImage = '';
-         icon.style.backgroundColor = '';
+         icon.style.backgroundImage = ''; // Clear background if no URL
+         icon.style.backgroundColor = ''; // Use default placeholder color from CSS
          console.log('[showTypingIndicator] No icon URL for typing indicator.');
     }
 
@@ -423,10 +430,11 @@ function appendChatError(message) {
     if (chatHistory) {
         removeTypingIndicator();
         // エラーメッセージは 'error' タイプで表示
-        // ★ LIMIT_REACHED の場合は専用のスタイルなどを適用しても良い
+        // ★ LIMIT_REACHED の場合は専用のスタイルなどを適用しても良い (現状は通常のエラーと同じ表示)
         appendMessage('error', message, true);
     } else {
         console.error("Chat history element not found, cannot append error:", message);
+        // チャット履歴がない場合のエラー表示 (フォールバック)
         if(profileError) {
             profileError.textContent = `チャットエラー: ${message}`;
             profileError.style.display = 'block';
@@ -455,15 +463,12 @@ function updateTurnCounter(currentCount, maxCount) {
     }
 
     // turnCount はメッセージの総数 (user + ai) なので、残りの「往復数」で表示する場合
-    const remainingTurns = Math.max(0, Math.floor((maxCount - currentCount) / 2));
-    // または、残りの「送信可能回数」で表示する場合 (ユーザーが次に送信できるか)
+    // const remainingTurns = Math.max(0, Math.floor((maxCount - currentCount) / 2));
+    // または、残りの「送信可能メッセージ数」で表示する場合 (ユーザーが次に送信できるか)
     const remainingMessages = Math.max(0, maxCount - currentCount);
 
-    // ここでは「残り往復数」で表示する例
-    // turnCounterElement.textContent = `残チャット ${remainingTurns} 回`;
-
     // ここでは「残りメッセージ数」で表示する例（より直感的かもしれない）
-    turnCounterElement.textContent = `残チャット ${remainingMessages} 回`;
+    turnCounterElement.textContent = `残 ${remainingMessages} 回`; // 表示テキスト変更
 
     // 上限に達したらスタイルを変更するなど
     if (remainingMessages <= 0) {
@@ -489,7 +494,13 @@ function getUniqueIdFromUrl() {
              console.error("Could not find 'char_id' or 'id' parameter in URL.");
              return null;
         }
-        return potentialId.trim() || null;
+        // IDに不要な空白が含まれていないか確認
+        const cleanId = potentialId.trim();
+        if (!cleanId) {
+            console.error("ID parameter found but is empty or whitespace.");
+            return null;
+        }
+        return cleanId;
     } catch (e) {
         console.error("Error extracting Character ID from URL:", e);
         return null;
@@ -498,13 +509,25 @@ function getUniqueIdFromUrl() {
 
 function scrollToBottom(element, behavior = 'smooth') {
     if (element) {
-        element.scrollTop = element.scrollHeight;
+        // スムーズスクロールを無効にする場合 ('auto')
+        if (behavior === 'auto') {
+            element.scrollTop = element.scrollHeight;
+        } else {
+            // スムーズスクロールを有効にする場合 ('smooth')
+            element.scrollTo({
+                top: element.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
     }
 }
 
 // Optional: Function to adjust textarea height dynamically
 // function adjustTextareaHeight() {
 //   if (!userInput) return;
-//   userInput.style.height = 'auto'; // Reset height
-//   userInput.style.height = userInput.scrollHeight + 'px'; // Set to scroll height
+//   userInput.style.height = 'auto'; // Reset height to recalculate scrollHeight
+//   // Calculate the scroll height and add a buffer (e.g., border height) if needed
+//   let scrollHeight = userInput.scrollHeight;
+//   // Prevent infinite growing loop by setting a max-height in CSS
+//   userInput.style.height = scrollHeight + 'px';
 // }
