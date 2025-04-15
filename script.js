@@ -1,8 +1,8 @@
-// script.js (replaceAll 適用 & scrollIntoView behavior:auto 改善版 & sendMessage を async/await で修正)
+// script.js (履歴表示機能追加、その他改善)
 
 // --- Constants and Configuration ---
-const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api';
-const WELCOME_MESSAGE = 'チャットを開始します！';
+const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api'; // 必要に応じて更新
+const WELCOME_MESSAGE = 'チャットを開始します！'; // 履歴がない場合に表示
 const ERROR_MESSAGES = {
     NETWORK: 'ネットワークエラーが発生しました。接続を確認してください。',
     API_RESPONSE: 'AIからの応答がありませんでした。',
@@ -17,7 +17,7 @@ const ERROR_MESSAGES = {
 const profileView = document.getElementById('profile-view');
 const charIcon = document.getElementById('char-icon');
 const charName = document.getElementById('char-name');
-const charProfileTextElement = document.getElementById('char-profile'); // ★ IDが 'char-profile' の要素を取得
+const charProfileTextElement = document.getElementById('char-profile');
 const startChatButton = document.getElementById('start-chat-button');
 const profileError = document.getElementById('profile-error');
 const chatView = document.getElementById('chat-view');
@@ -26,13 +26,14 @@ const chatForm = document.getElementById('chat-input-form');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const chatHeaderTitle = document.getElementById('chat-header-title');
-const chatError = document.getElementById('chat-error'); // chat-error 要素も取得（エラー表示用）
+const chatError = document.getElementById('chat-error'); // chat-error 要素も取得
 
 // --- State ---
 let isAiResponding = false;
 let typingIndicatorId = null;
 let characterId = null;
 let characterIconUrl = null;
+let hasLoadedHistory = false; // ★ 履歴読み込み済みフラグ
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -41,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         displayProfileError(ERROR_MESSAGES.ID_FETCH_ERROR);
         return;
     }
-    await loadProfileData(characterId);
+    await loadProfileAndHistoryData(characterId); // ★ 関数名変更 & 履歴読み込み処理
     if(startChatButton) { startChatButton.addEventListener('click', startChat); }
     else { console.error("Start chat button not found"); }
     if(chatForm) { chatForm.addEventListener('submit', handleFormSubmit); }
@@ -53,8 +54,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else { console.error("User input not found"); }
 });
 
-// --- Profile Loading ---
-async function loadProfileData(id) {
+// --- Profile & History Loading --- ★ 関数名と処理内容変更
+async function loadProfileAndHistoryData(id) {
     showLoadingState(true);
     if(profileError) profileError.style.display = 'none';
     try {
@@ -67,18 +68,48 @@ async function loadProfileData(id) {
             } catch (e) { errorMsg = `HTTP ${response.status}`; }
             throw new Error(errorMsg);
         }
-        const profileData = await response.json();
-        displayProfileData(profileData);
+        const data = await response.json();
+
+        displayProfileData(data); // プロファイル表示
+
+        // ★★★ 履歴データの表示処理 ★★★
+        if (data.history && Array.isArray(data.history) && data.history.length > 0) {
+            console.log(`Loading ${data.history.length} messages from history...`);
+            if (chatHistory) {
+                chatHistory.innerHTML = ''; // 既存の表示をクリア
+                data.history.forEach(message => {
+                    // サーバーからのデータ形式に合わせて role と message を渡す
+                    if (message.role && message.message) {
+                        appendMessage(message.role, message.message, false); // スクロールは最後に行うのでここではfalse
+                    } else {
+                        console.warn("Skipping history item due to missing role or message:", message);
+                    }
+                });
+                hasLoadedHistory = true; // 履歴読み込みフラグを立てる
+                 // 履歴表示後、一番下にスクロール
+                scrollToBottom(chatHistory, 'auto');
+            }
+        } else {
+            console.log("No history data found or history is empty.");
+            hasLoadedHistory = false; // 履歴がない場合もフラグ更新
+            // 履歴がない場合のみウェルカムメッセージを追加（startChatへ移動）
+            // if (chatHistory) {
+            //     chatHistory.innerHTML = ''; // クリアはしておく
+            //     appendMessage('ai', WELCOME_MESSAGE, false);
+            // }
+        }
+         // ★★★ 履歴表示処理ここまで ★★★
+
     } catch (error) {
-        console.error("Failed to load profile data:", error);
+        console.error("Failed to load profile and history data:", error);
         displayProfileError(error.message || ERROR_MESSAGES.PROFILE_FETCH_ERROR);
     } finally {
-         showLoadingState(false);
+        showLoadingState(false);
     }
 }
 
+
 function displayProfileData(data) {
-    // ★ charProfile を charProfileTextElement に変更
     if (!profileView || !charName || !charProfileTextElement || !charIcon || !chatHeaderTitle) {
         console.error("Profile display elements not found.");
         return;
@@ -87,12 +118,9 @@ function displayProfileData(data) {
 
     charName.textContent = data.name || '名前なし';
 
-    // --- ★ 置換処理を追加 ---
-    // 1. Firestoreから取得した生のprofileTextを取得 (なければデフォルトメッセージ)
+    // --- ★ 置換処理 (変更なし) ---
     const rawProfileText = data.profileText || 'プロフィール情報がありません。';
-    // 2. 文字列中の '\\n' を実際の改行コード '\n' に置換
     const processedProfileText = rawProfileText.replaceAll('\\n', '\n');
-    // 3. 置換処理後のテキストを profileText を表示するHTML要素に設定
     charProfileTextElement.textContent = processedProfileText;
     // --- ★ 置換処理ここまで ---
 
@@ -108,10 +136,9 @@ function displayProfileData(data) {
 }
 
 function displayProfileError(message) {
-    // ★ charProfile を charProfileTextElement に変更
     if (!profileView || !charName || !charProfileTextElement || !profileError || !startChatButton) return;
     charName.textContent = 'エラー';
-    charProfileTextElement.textContent = 'キャラクター情報を読み込めませんでした。'; // エラー時もここ
+    charProfileTextElement.textContent = 'キャラクター情報を読み込めませんでした。';
     const displayMessage = Object.values(ERROR_MESSAGES).includes(message) ? message : ERROR_MESSAGES.PROFILE_FETCH_ERROR;
     profileError.textContent = displayMessage;
     profileError.style.display = 'block';
@@ -119,38 +146,31 @@ function displayProfileError(message) {
 }
 
 function showLoadingState(isLoading) {
-    // ★ charProfile を charProfileTextElement に変更
     if(isLoading) {
         if(charName) charName.textContent = '読み込み中...';
-        if(charProfileTextElement) charProfileTextElement.textContent = '情報を取得しています...'; // ローディング時もここ
+        if(charProfileTextElement) charProfileTextElement.textContent = '情報を取得しています...';
         if(startChatButton) startChatButton.disabled = true;
     }
-     // Note: You might want an 'else' block here to re-enable the button
-     // if loading finishes successfully, but loadProfileData already handles that.
+    // Note: ローディング完了時のボタン有効化は loadProfileAndHistoryData の最後で行われる
 }
 
 // --- View Switching ---
 function startChat() {
-    if(!profileView || !chatView || !userInput) { console.error("Cannot switch views."); return; }
+    if(!profileView || !chatView || !userInput || !chatHistory) { console.error("Cannot switch views."); return; }
     profileView.classList.add('hidden');
     chatView.classList.remove('hidden');
     userInput.focus();
 
-    // Initial scroll and welcome message logic
+    // ★★★ 履歴がない場合のみウェルカムメッセージを追加 ★★★
+    if (!hasLoadedHistory && chatHistory.children.length === 0) {
+        appendMessage('ai', WELCOME_MESSAGE, false); // スクロールは最後に行う
+    }
+
+    // ★★★ 画面表示後に一番下にスクロール ★★★
+    // setTimeout を使ってレンダリング後のスクロールを確実にする
     setTimeout(() => {
-        if (chatHistory) {
-            if (chatHistory.children.length === 0) {
-                // Only add welcome message if history is truly empty
-                appendMessage('ai', WELCOME_MESSAGE);
-            } else {
-                // If history exists, just scroll to the end
-                const lastMessage = chatHistory.lastElementChild;
-                if (lastMessage) {
-                    lastMessage.scrollIntoView({ behavior: 'auto', block: 'end' });
-                }
-            }
-        }
-    }, 100); // Short delay to ensure rendering
+        scrollToBottom(chatHistory, 'auto');
+    }, 100); // 短い遅延
 }
 
 // --- Event Handlers (Chat) ---
@@ -158,9 +178,7 @@ function handleFormSubmit(event) { event.preventDefault(); sendMessage(); }
 function handleInputKeyPress(event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); } }
 
 // --- Core Logic (Chat) ---
-// =========================================
-// ★★★ sendMessage 関数を async/await 版に修正 ★★★
-// =========================================
+// ★★★ sendMessage 関数 (エラー処理改善含む、前回と同じ) ★★★
 async function sendMessage() {
     if (isAiResponding) return;
     if (!characterId) { appendChatError(ERROR_MESSAGES.ID_FETCH_ERROR); return; }
@@ -168,13 +186,13 @@ async function sendMessage() {
     const userMessageText = userInput.value.trim();
     if (userMessageText === '') return;
 
-    appendMessage('user', userMessageText);
+    appendMessage('user', userMessageText, true); // ユーザーメッセージは即時スクロール
     userInput.value = '';
-    // adjustTextareaHeight(); // Adjust height after clearing (Optional)
+    // adjustTextareaHeight(); // Optional
     userInput.focus();
-    showTypingIndicator();
+    showTypingIndicator(); // タイピング表示開始＆スクロール
     setAiResponding(true);
-    clearChatError(); // Clear previous errors on new message send
+    clearChatError(); // Clear previous errors
 
     try {
         const response = await fetch(API_ENDPOINT, {
@@ -183,108 +201,90 @@ async function sendMessage() {
             body: JSON.stringify({ message: userMessageText, id: characterId })
         });
 
-        // --- エラーレスポンス処理 ---
         if (!response.ok) {
             let errorPayload = null;
-            let errorMessage = `HTTP error! status: ${response.status}`; // デフォルトのエラーメッセージ
-
+            let errorMessage = `HTTP error! status: ${response.status}`;
             try {
-                // エラーレスポンスのボディ (JSON形式) を試みる
                 errorPayload = await response.json();
-                console.log("API Error Payload:", errorPayload); // デバッグ用にペイロードをログ出力
-
-                // ステータスコードやペイロードに応じてエラーメッセージを決定
-                if (response.status === 403) {
-                    errorMessage = ERROR_MESSAGES.LIMIT_REACHED; // ★期待するメッセージ
+                console.log("API Error Payload:", errorPayload);
+                if (response.status === 403 && errorPayload?.code === 'LIMIT_REACHED') { // codeもチェック
+                    errorMessage = ERROR_MESSAGES.LIMIT_REACHED;
                 } else if (response.status === 404) {
                     errorMessage = errorPayload?.error || ERROR_MESSAGES.INVALID_ID;
                 } else if (errorPayload?.error) {
-                    // APIが返したエラーメッセージを利用
                     errorMessage = errorPayload.error;
                 }
-                // 必要に応じて他のステータスコードの処理を追加
             } catch (jsonError) {
-                // エラーレスポンスのJSONパースに失敗した場合 (ボディが空、JSONでない等)
-                // errorMessage はデフォルトの "HTTP error! status: ..." のまま
-                console.error("Failed to parse error response JSON (this is expected if body is empty or not JSON):", jsonError);
+                 console.error("Failed to parse error response JSON:", jsonError);
             }
-            // 決定したエラーメッセージで Error を throw する
             throw new Error(errorMessage);
         }
 
-        // --- 正常レスポンス処理 ---
         const data = await response.json();
         if (data && data.reply) {
-            appendMessage('ai', data.reply);
+            // AIの返信はタイピングインジケーター削除後に表示＆スクロール
+            removeTypingIndicator(); // 先にインジケーターを消す
+            appendMessage('ai', data.reply, true); // AIメッセージを追加してスクロール
         } else {
-            // 正常レスポンスだが 'reply' がない場合
             console.warn("API response OK, but 'reply' field missing.", data);
             throw new Error(ERROR_MESSAGES.API_RESPONSE);
         }
 
-    } catch (error) { // fetch 自体のエラー、または上で throw した Error をキャッチ
-        console.error('Error caught in sendMessage:', error); // エラー内容をコンソールに出力
-        // 最終的なエラーメッセージを画面に表示
-        appendChatError(error.message || ERROR_MESSAGES.GENERAL);
+    } catch (error) {
+        console.error('Error caught in sendMessage:', error);
+        removeTypingIndicator(); // エラー時もインジケーター削除
+        appendChatError(error.message || ERROR_MESSAGES.GENERAL); // エラーメッセージ表示＆スクロール
     } finally {
-        // 成功・失敗に関わらず実行
-        removeTypingIndicator();
-        setAiResponding(false);
+        setAiResponding(false); // 応答状態解除
     }
 }
-// =========================================
-// ★★★ sendMessage 関数の修正 ここまで ★★★
-// =========================================
 
 
 // --- State Management (Chat) ---
 function setAiResponding(isResponding) {
     isAiResponding = isResponding;
-    // Check elements exist before disabling
     if (sendButton) sendButton.disabled = isResponding;
     if (userInput) userInput.disabled = isResponding;
 }
 
 // --- UI Update Functions (Chat) ---
-function appendMessage(senderType, text) {
+// ★★★ appendMessage に scroll オプション追加 ★★★
+function appendMessage(senderType, text, shouldScroll = true) { // デフォルトでスクロールする
     if(!chatHistory) return;
     const messageId = `${senderType}-${Date.now()}`;
-    const fragment = document.createDocumentFragment(); // Use fragment for efficiency
+    const fragment = document.createDocumentFragment();
     const messageRow = createMessageRowElement(senderType, messageId);
     const icon = createIconElement(senderType);
-    const content = createMessageContentElement(senderType, text); // Pass text here
+    const content = createMessageContentElement(senderType, text);
 
-    // Set AI icon if available
-    if (senderType === 'ai' || senderType === 'error') { // AI or Error message uses character icon
+    if (senderType === 'ai' || senderType === 'error') {
         if (characterIconUrl) {
              icon.style.backgroundImage = `url('${characterIconUrl}')`;
              icon.style.backgroundColor = 'transparent';
         } else {
-            // Keep default placeholder only if no icon URL
              icon.style.backgroundImage = '';
-             icon.style.backgroundColor = ''; // Let CSS handle placeholder color
+             icon.style.backgroundColor = ''; // Let CSS handle placeholder
         }
-         if(senderType === 'error') {
-            // Override icon for explicit error type if needed by CSS/design
-             icon.classList.add('message__icon--error'); // Add specific class if needed
-         }
+        if(senderType === 'error') {
+             icon.classList.add('message__icon--error');
+        }
     }
-    // User icon is handled by CSS typically
 
-    // Append order based on sender
     if (senderType === 'user') { messageRow.appendChild(content); messageRow.appendChild(icon); }
-    else { messageRow.appendChild(icon); messageRow.appendChild(content); } // ai or error
+    else { messageRow.appendChild(icon); messageRow.appendChild(content); }
 
     fragment.appendChild(messageRow);
     chatHistory.appendChild(fragment);
 
-    // Use scrollIntoView with behavior: 'auto' for smoother scrolling in most cases
-    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' });
+    // ★★★ 条件に応じてスクロール ★★★
+    if (shouldScroll) {
+        scrollToBottom(chatHistory, 'auto'); // 新しいスクロール関数呼び出し
+    }
 }
 
 function createMessageRowElement(senderType, messageId) {
     const element = document.createElement('div');
-    element.className = `message message--${senderType === 'user' ? 'user' : 'ai'}`; // Default to 'ai' class for non-user
+    element.className = `message message--${senderType === 'user' ? 'user' : 'ai'}`;
     element.dataset.messageId = messageId;
      if (senderType === 'error') { element.classList.add('message--error'); }
     return element;
@@ -293,7 +293,6 @@ function createMessageRowElement(senderType, messageId) {
 function createIconElement(senderType) {
     const element = document.createElement('div');
     element.className = 'message__icon';
-     // Specific sender icon styles are best handled in CSS or background image set in appendMessage
     return element;
 }
 
@@ -303,17 +302,19 @@ function createMessageContentElement(senderType, text) {
     const bubble = document.createElement('div');
     bubble.className = 'message__bubble';
 
-    // Simple Markdown-like link handling: [text](url)
-    // Regex to find markdown links
     const linkRegex = /\[([^\]]+)]\((https?:\/\/[^\s)]+)\)/g;
 
-    // Check if text contains links AND is not an error message
-    if (senderType !== 'error' && linkRegex.test(text)) {
-         // Replace markdown links with actual <a> tags
-         bubble.innerHTML = text.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    // ★★★ 改行コード (\n) を <br> に変換する処理を追加 ★★★
+    const processedText = text.replaceAll('\n', '<br>');
+
+    // リンク処理と改行処理を組み合わせる
+    // Note: replaceAll の後に replace を使う
+    if (senderType !== 'error' && linkRegex.test(processedText)) {
+         // innerHTML を使うので XSS に注意が必要だが、URL/テキスト部分はある程度制限されている想定
+         bubble.innerHTML = processedText.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     } else {
-         // If no links or it's an error, just set text content (safer for preventing XSS)
-         bubble.textContent = text;
+         // リンクがない場合やエラーの場合は textContent ではなく innerHTML で <br> を有効にする
+         bubble.innerHTML = processedText; // textContentだと <br> がそのまま表示される
     }
 
     const timestamp = document.createElement('div');
@@ -321,7 +322,6 @@ function createMessageContentElement(senderType, text) {
     timestamp.textContent = getCurrentTime();
 
     content.appendChild(bubble);
-    // Only add timestamp for non-error messages
     if (senderType !== 'error') { content.appendChild(timestamp); }
     return content;
 }
@@ -332,7 +332,7 @@ function showTypingIndicator() {
     const messageId = `typing-${Date.now()}`;
     typingIndicatorId = messageId;
     const fragment = document.createDocumentFragment();
-    const messageRow = createMessageRowElement('ai', messageId); // Use 'ai' type for layout
+    const messageRow = createMessageRowElement('ai', messageId);
     const icon = createIconElement('ai');
     if (characterIconUrl) { icon.style.backgroundImage = `url('${characterIconUrl}')`; icon.style.backgroundColor = 'transparent'; }
 
@@ -345,8 +345,8 @@ function showTypingIndicator() {
     messageRow.appendChild(icon); messageRow.appendChild(content);
     fragment.appendChild(messageRow); chatHistory.appendChild(fragment);
 
-    // Scroll the indicator into view
-    messageRow.scrollIntoView({ behavior: 'auto', block: 'end' });
+    // ★★★ タイピングインジケーター表示時もスクロール ★★★
+    scrollToBottom(chatHistory, 'auto');
 }
 
 function removeTypingIndicator() {
@@ -358,15 +358,13 @@ function removeTypingIndicator() {
 }
 
 function appendChatError(message) {
-    // ログを追加して、渡されるメッセージを確認
     console.log("Appending chat error with message:", message);
     if (chatHistory) {
-         removeTypingIndicator(); // Remove typing indicator if an error occurs
-         appendMessage('error', message); // Use the specific 'error' type
+        removeTypingIndicator();
+        appendMessage('error', message, true); // エラーメッセージもスクロール
     } else {
-        // Fallback if chat history isn't available (e.g., error during init)
         console.error("Chat history element not found, cannot append error:", message);
-        if(profileError) { // Display error in profile section as a last resort
+        if(profileError) {
             profileError.textContent = `チャットエラー: ${message}`;
             profileError.style.display = 'block';
         }
@@ -375,12 +373,10 @@ function appendChatError(message) {
 
 
 function clearChatError() {
-    // Find and remove existing error messages from chat history
     if(chatHistory) {
         const errorMessages = chatHistory.querySelectorAll('.message--error');
         errorMessages.forEach(el => el.remove());
     }
-    // Also hide profile error if it was used as fallback
     // if (profileError && profileError.textContent.startsWith('チャットエラー:')) {
     //    profileError.textContent = '';
     //    profileError.style.display = 'none';
@@ -390,27 +386,38 @@ function clearChatError() {
 
 // --- Utility Functions ---
 function getCurrentTime() {
-    return new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false }); // Use ja-JP for consistency
+    return new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-// Function to get Character ID from URL
 function getUniqueIdFromUrl() {
     try {
         const params = new URLSearchParams(window.location.search);
-        // Try 'char_id' first, then fall back to 'id' for compatibility
-        const potentialId = params.get('char_id') || params.get('id');
+        const potentialId = params.get('char_id') || params.get('id'); // 'char_id' or 'id'
         console.log("Extracted Character ID from query params:", potentialId);
         if (!potentialId) {
              console.error("Could not find 'char_id' or 'id' parameter in URL.");
              return null;
         }
-        // Basic validation (e.g., check if it's not empty string)
         return potentialId.trim() || null;
     } catch (e) {
         console.error("Error extracting Character ID from URL:", e);
         return null;
     }
 }
+
+// ★★★ スクロール用のヘルパー関数 ★★★
+function scrollToBottom(element, behavior = 'smooth') {
+    if (element) {
+        // scrollIntoView より scrollTop の方が制御しやすい場合がある
+        element.scrollTop = element.scrollHeight;
+        // もし scrollIntoView を使う場合:
+        // const lastMessage = element.lastElementChild;
+        // if (lastMessage) {
+        //     lastMessage.scrollIntoView({ behavior: behavior, block: 'end' });
+        // }
+    }
+}
+
 
 // Optional: Function to adjust textarea height dynamically
 // function adjustTextareaHeight() {
