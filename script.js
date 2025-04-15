@@ -2,7 +2,7 @@
 
 // --- Constants and Configuration ---
 const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api';
-const WELCOME_MESSAGE = 'チャットを開始します！';
+const WELCOME_MESSAGE = 'チャットを開始します！お名前を教えてください！';
 const ERROR_MESSAGES = {
     NETWORK: 'ネットワークエラーが発生しました。接続を確認してください。',
     API_RESPONSE: 'AIからの応答がありませんでした。',
