@@ -463,7 +463,7 @@ function updateTurnCounter(currentCount, maxCount) {
     // turnCounterElement.textContent = `残チャット ${remainingTurns} 回`;
 
     // ここでは「残りメッセージ数」で表示する例（より直感的かもしれない）
-    turnCounterElement.textContent = `残 ${remainingMessages} 回`;
+    turnCounterElement.textContent = `残チャット ${remainingMessages} 回`;
 
     // 上限に達したらスタイルを変更するなど
     if (remainingMessages <= 0) {
