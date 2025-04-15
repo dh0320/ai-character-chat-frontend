@@ -1,4 +1,4 @@
-// script.js (履歴表示機能追加、アイコン表示 'model' -> 'ai' マッピング修正、デバッグログ付き)
+// script.js (履歴表示機能追加、アイコン表示 'model' -> 'ai' マッピング修正、残り回数表示追加)
 
 // --- Constants and Configuration ---
 const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api'; // 必要に応じて更新
@@ -27,6 +27,8 @@ const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const chatHeaderTitle = document.getElementById('chat-header-title');
 const chatError = document.getElementById('chat-error'); // chat-error 要素も取得
+// ★★★ 残り回数表示用の要素を取得 ★★★
+const turnCounterElement = document.getElementById('turn-counter');
 
 // --- State ---
 let isAiResponding = false;
@@ -34,6 +36,9 @@ let typingIndicatorId = null;
 let characterId = null;
 let characterIconUrl = null; // アイコンURLを保持するグローバル変数
 let hasLoadedHistory = false; // 履歴読み込み済みフラグ
+// ★★★ 会話回数関連の変数を追加 ★★★
+let currentTurnCount = 0;
+let maxTurns = 0; // ここではメッセージ総数(turnCount)の上限値
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -70,7 +75,8 @@ async function loadProfileAndHistoryData(id) {
         }
         const data = await response.json();
 
-        displayProfileData(data); // プロファイル表示 (ここで characterIconUrl が設定される)
+        // ★★★ プロファイル表示関数内で回数も更新 ★★★
+        displayProfileData(data); // ここで characterIconUrl, currentTurnCount, maxTurns が設定される
 
         // 履歴データの表示処理
         if (data.history && Array.isArray(data.history) && data.history.length > 0) {
@@ -106,7 +112,7 @@ async function loadProfileAndHistoryData(id) {
 
 
 function displayProfileData(data) {
-    if (!profileView || !charName || !charProfileTextElement || !charIcon || !chatHeaderTitle) {
+    if (!profileView || !charName || !charProfileTextElement || !charIcon || !chatHeaderTitle || !turnCounterElement) { // ★ turnCounterElement もチェック
         console.error("Profile display elements not found.");
         return;
     }
@@ -130,17 +136,25 @@ function displayProfileData(data) {
         console.log("No Character Icon URL found."); // デバッグ用
     }
     chatHeaderTitle.textContent = data.name || 'AIキャラクター';
+
+    // ★★★ 会話回数と上限を設定し、カウンターを更新 ★★★
+    currentTurnCount = data.currentTurnCount ?? 0; // nullish coalescing で 0 をデフォルトに
+    maxTurns = data.maxTurns ?? 0; // 同様にデフォルトを0に
+    updateTurnCounter(currentTurnCount, maxTurns); // 残り回数を表示
+
     if(startChatButton) startChatButton.disabled = false;
 }
 
 function displayProfileError(message) {
-    if (!profileView || !charName || !charProfileTextElement || !profileError || !startChatButton) return;
+    if (!profileView || !charName || !charProfileTextElement || !profileError || !startChatButton || !turnCounterElement) return; // ★ turnCounterElement もチェック
     charName.textContent = 'エラー';
     charProfileTextElement.textContent = 'キャラクター情報を読み込めませんでした。';
     const displayMessage = Object.values(ERROR_MESSAGES).includes(message) ? message : ERROR_MESSAGES.PROFILE_FETCH_ERROR;
     profileError.textContent = displayMessage;
     profileError.style.display = 'block';
     startChatButton.disabled = true;
+    // ★ エラー時はカウンターも非表示または初期状態にする
+    turnCounterElement.textContent = ''; // または '残数: -' など
 }
 
 function showLoadingState(isLoading) {
@@ -148,6 +162,7 @@ function showLoadingState(isLoading) {
         if(charName) charName.textContent = '読み込み中...';
         if(charProfileTextElement) charProfileTextElement.textContent = '情報を取得しています...';
         if(startChatButton) startChatButton.disabled = true;
+        if(turnCounterElement) turnCounterElement.textContent = ''; // 読み込み中はカウンターをクリア
     }
 }
 
@@ -162,6 +177,10 @@ function startChat() {
     if (!hasLoadedHistory && chatHistory.children.length === 0) {
         appendMessage('ai', WELCOME_MESSAGE, false); // スクロールは最後に行う
     }
+
+    // ★★★ チャット画面表示時にカウンターを更新 ★★★
+    // (displayProfileDataで既に更新されているが、念のためここでも呼ぶ)
+    updateTurnCounter(currentTurnCount, maxTurns);
 
     // 画面表示後に一番下にスクロール
     setTimeout(() => {
@@ -181,7 +200,13 @@ async function sendMessage() {
     const userMessageText = userInput.value.trim();
     if (userMessageText === '') return;
 
-    // ユーザーメッセージ追加 (アイコンURLは不要なのでnullを渡すが、appendMessage側で無視される)
+    // ★★★ 送信前に残数チェック (より親切なUI) ★★★
+    if (currentTurnCount >= maxTurns && maxTurns > 0) { // maxTurns > 0 は初期化前でないことを確認
+        appendChatError(ERROR_MESSAGES.LIMIT_REACHED);
+        return; // 上限に達していたら送信しない
+    }
+
+    // ユーザーメッセージ追加
     appendMessage('user', userMessageText, true);
     userInput.value = '';
     userInput.focus();
@@ -196,39 +221,57 @@ async function sendMessage() {
             body: JSON.stringify({ message: userMessageText, id: characterId })
         });
 
+        let responseData = null; // スコープを広げる
+        try {
+            responseData = await response.json(); // エラー時もJSONを先にパース試行
+            console.log("API Response Data:", responseData);
+        } catch (jsonError) {
+            console.error("Failed to parse API response JSON:", jsonError);
+             // JSONパース失敗時は基本的なHTTPエラーを投げる
+            if (!response.ok) {
+                 throw new Error(`HTTP error! status: ${response.status}`);
+            } else {
+                 // 成功しているのにJSONパース失敗は考えにくいが念のため
+                 throw new Error(ERROR_MESSAGES.API_RESPONSE);
+            }
+        }
+
         if (!response.ok) {
-            let errorPayload = null;
             let errorMessage = `HTTP error! status: ${response.status}`;
-            try {
-                errorPayload = await response.json();
-                console.log("API Error Payload:", errorPayload);
-                if (response.status === 403 && errorPayload?.code === 'LIMIT_REACHED') {
+            if (responseData) { // パース成功していれば詳細なエラーメッセージを使う
+                if (response.status === 403 && responseData?.code === 'LIMIT_REACHED') {
                     errorMessage = ERROR_MESSAGES.LIMIT_REACHED;
+                    // ★★★ 上限エラーの場合、カウンターも更新 ★★★
+                    currentTurnCount = responseData.currentTurnCount ?? currentTurnCount;
+                    maxTurns = responseData.maxTurns ?? maxTurns;
+                    updateTurnCounter(currentTurnCount, maxTurns);
                 } else if (response.status === 404) {
-                    errorMessage = errorPayload?.error || ERROR_MESSAGES.INVALID_ID;
-                } else if (errorPayload?.error) {
-                    errorMessage = errorPayload.error;
+                    errorMessage = responseData?.error || ERROR_MESSAGES.INVALID_ID;
+                } else if (responseData?.error) {
+                    errorMessage = responseData.error;
                 }
-            } catch (jsonError) {
-                 console.error("Failed to parse error response JSON:", jsonError);
             }
             throw new Error(errorMessage);
         }
 
-        const data = await response.json();
-        if (data && data.reply) {
+        // レスポンスがOKの場合
+        if (responseData && responseData.reply) {
             removeTypingIndicator();
-            // AI応答メッセージ追加 (グローバル変数の characterIconUrl が使われる)
-            // API応答には role が含まれないので、固定で 'ai' を渡す
-            appendMessage('ai', data.reply, true);
+            // AI応答メッセージ追加
+            appendMessage('ai', responseData.reply, true);
+            // ★★★ 応答成功後、カウンターを更新 ★★★
+            currentTurnCount = responseData.currentTurnCount ?? currentTurnCount;
+            maxTurns = responseData.maxTurns ?? maxTurns;
+            updateTurnCounter(currentTurnCount, maxTurns);
         } else {
-            console.warn("API response OK, but 'reply' field missing.", data);
+            console.warn("API response OK, but 'reply' field missing or invalid response data.", responseData);
             throw new Error(ERROR_MESSAGES.API_RESPONSE);
         }
 
     } catch (error) {
         console.error('Error caught in sendMessage:', error);
         removeTypingIndicator();
+        // ★ LIMIT_REACHED エラーの場合は、エラーメッセージ表示前にカウンター更新済み
         appendChatError(error.message || ERROR_MESSAGES.GENERAL);
     } finally {
         setAiResponding(false);
@@ -244,13 +287,13 @@ function setAiResponding(isResponding) {
 }
 
 // --- UI Update Functions (Chat) ---
-// appendMessage 関数 (デバッグログ付き、'ai' と 'model' の判定は 'ai' のまま)
+// appendMessage 関数 (変更なし)
 function appendMessage(senderType, text, shouldScroll = true) {
     if(!chatHistory) return;
     const messageId = `${senderType}-${Date.now()}`;
     const fragment = document.createDocumentFragment();
     // ★ クラス名設定を 'model' ではなく 'ai' に統一する方向でも良い
-    //    その場合 CSS が .message--ai を対象にしていれば修正不要
+    //   その場合 CSS が .message--ai を対象にしていれば修正不要
     // const rowClassSender = senderType === 'model' ? 'ai' : senderType; // 必要ならここで変換
     // const messageRow = createMessageRowElement(rowClassSender, messageId);
     // ↓↓↓ 一旦 'model' のままにしておく (CSS確認を推奨)
@@ -380,6 +423,7 @@ function appendChatError(message) {
     if (chatHistory) {
         removeTypingIndicator();
         // エラーメッセージは 'error' タイプで表示
+        // ★ LIMIT_REACHED の場合は専用のスタイルなどを適用しても良い
         appendMessage('error', message, true);
     } else {
         console.error("Chat history element not found, cannot append error:", message);
@@ -398,8 +442,40 @@ function clearChatError() {
     }
 }
 
+// --- ★★★ 残り回数更新関数 ★★★ ---
+function updateTurnCounter(currentCount, maxCount) {
+    if (!turnCounterElement) {
+        console.warn("Turn counter element not found, cannot update.");
+        return;
+    }
+    // maxCount が 0 または未定義の場合はカウンターを表示しないか、別の表示にする
+    if (maxCount <= 0) {
+        turnCounterElement.textContent = ''; // または turnCounterElement.style.display = 'none';
+        return;
+    }
 
-// --- Utility Functions ---
+    // turnCount はメッセージの総数 (user + ai) なので、残りの「往復数」で表示する場合
+    const remainingTurns = Math.max(0, Math.floor((maxCount - currentCount) / 2));
+    // または、残りの「送信可能回数」で表示する場合 (ユーザーが次に送信できるか)
+    const remainingMessages = Math.max(0, maxCount - currentCount);
+
+    // ここでは「残り往復数」で表示する例
+    // turnCounterElement.textContent = `残り ${remainingTurns} 回`;
+
+    // ここでは「残りメッセージ数」で表示する例（より直感的かもしれない）
+    turnCounterElement.textContent = `残 ${remainingMessages} 回`;
+
+    // 上限に達したらスタイルを変更するなど
+    if (remainingMessages <= 0) {
+        turnCounterElement.classList.add('limit-reached'); // CSSでスタイルを定義
+    } else {
+        turnCounterElement.classList.remove('limit-reached');
+    }
+    console.log(`Turn counter updated: Current=${currentCount}, Max=${maxCount}, RemainingMsg=${remainingMessages}`);
+}
+
+
+// --- Utility Functions (変更なし) ---
 function getCurrentTime() {
     return new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
@@ -428,7 +504,7 @@ function scrollToBottom(element, behavior = 'smooth') {
 
 // Optional: Function to adjust textarea height dynamically
 // function adjustTextareaHeight() {
-//    if (!userInput) return;
-//    userInput.style.height = 'auto'; // Reset height
-//    userInput.style.height = userInput.scrollHeight + 'px'; // Set to scroll height
+//   if (!userInput) return;
+//   userInput.style.height = 'auto'; // Reset height
+//   userInput.style.height = userInput.scrollHeight + 'px'; // Set to scroll height
 // }
