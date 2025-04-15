@@ -1,4 +1,4 @@
-/* style.css (レイアウト修正 - スマホ ヘッダー/フッター重なり対応版) */
+/* style.css (レイアウト修正 - PC ヘッダー/フッター固定対応) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -99,7 +99,8 @@ body {
 .container {
     width: 100%;
     /* ★ Ensure container takes full height from flex parent (body) */
-    height: 100%;
+    height: 100vh; /* ★ Use 100vh for full viewport height */
+    max-height: 100vh; /* ★ Prevent container from exceeding viewport height */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -116,17 +117,19 @@ body {
 .view-section {
     width: 100%;
     /* ★ Ensure section takes full height from container */
-    height: 100%;
+    height: 100%; /* ★ Inherit full height */
     max-width: var(--chat-container-max-width);
     margin: 0 auto;
     background-color: var(--color-surface);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-md);
-    /* ★ Move overflow control to inner elements like .chat */
+    /* ★ Move overflow control to inner elements like .chat or .profile */
     /* overflow: hidden; */
     position: relative;
     display: flex;
     flex-direction: column;
+    /* ★ Ensure height is strictly followed */
+    max-height: 100%;
 }
 
 /* --- Profile View Styling --- */
@@ -137,13 +140,13 @@ body {
     flex-direction: column;
     height: 100%; /* Fill view-section */
     width: 100%;
-    overflow: hidden; /* Contain sticky header/footer */
+    overflow: hidden; /* Contain sticky header/footer AND enable scrolling on child */
 }
 .profile__header {
     position: sticky; /* Make header sticky within .profile */
     top: 0;
     z-index: 10;
-    background-color: var(--color-surface);
+    background-color: var(--color-surface); /* ★ Add background for sticky */
     padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
     flex-shrink: 0;
     text-align: center;
@@ -172,7 +175,7 @@ body {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding: var(--spacing-lg);
-    padding-right: calc(var(--spacing-lg) + 6px); /* Space for scrollbar */
+    padding-right: calc(var(--spacing-lg) + 8px); /* Space for scrollbar (adjust if needed) */
     background-color: var(--color-surface);
     scroll-padding-top: 10px;
     scroll-padding-bottom: 10px; /* Padding for scroll ends */
@@ -191,7 +194,7 @@ body {
     position: sticky; /* Make footer sticky within .profile */
     bottom: 0;
     z-index: 10;
-    background-color: var(--color-surface);
+    background-color: var(--color-surface); /* ★ Add background for sticky */
     padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl) var(--spacing-lg);
     border-top: 1px solid var(--color-border);
     flex-shrink: 0;
@@ -230,7 +233,7 @@ body {
 .chat__container {
     width: 100%; height: 100%; background-color: var(--color-surface);
     border-radius: inherit;
-    position: relative; /* ★ Context for fixed elements and stacking */
+    position: relative; /* ★ Context for sticky/fixed elements */
     display: flex;
     flex-direction: column;
     overflow: hidden; /* ★ Ensure container clips content */
@@ -247,7 +250,8 @@ body {
     flex-shrink: 0;
     box-shadow: var(--shadow-sm);
     z-index: 10; /* Above history */
-    position: relative; /* Default non-fixed */
+    position: sticky; /* ★ Make header sticky on desktop */
+    top: 0;          /* ★ Stick to top */
     width: 100%;
     justify-content: space-between;
     gap: var(--spacing-md);
@@ -280,7 +284,7 @@ body {
     min-height: 0; /* ★ Prevent flexbox overflow issues */
     background-color: var(--color-surface);
     scroll-padding-bottom: var(--spacing-md); /* Space at scroll end */
-    z-index: 1; /* ★ Ensure history is behind fixed header/footer */
+    z-index: 1; /* ★ Ensure history is behind sticky header/footer */
 }
 
 .chat__footer {
@@ -291,8 +295,9 @@ body {
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    z-index: 5; /* Above history, below header if needed */
-    position: relative; /* Default non-fixed */
+    z-index: 5; /* Above history */
+    position: sticky; /* ★ Make footer sticky on desktop */
+    bottom: 0;       /* ★ Stick to bottom */
     width: 100%;
 }
 
@@ -333,7 +338,8 @@ body {
         padding-top: var(--spacing-lg);
         padding-bottom: var(--spacing-lg); /* Content padding */
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
-        padding-right: calc(max(var(--spacing-lg), env(safe-area-inset-right)) + 4px); /* scrollbar */
+        /* ★ Adjust right padding for scrollbar on mobile */
+        padding-right: calc(max(var(--spacing-lg), env(safe-area-inset-right)) + 4px);
     }
     .profile__footer {
         position: sticky; bottom: 0; z-index: 10; background-color: var(--color-surface); border-top: 1px solid var(--color-border); flex-shrink: 0; text-align: center; width: 100%;
@@ -348,13 +354,14 @@ body {
     .chat { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
     .chat__container { border-radius: 0; height: 100%; position: relative; overflow: hidden; display: flex; flex-direction: column; }
 
+    /* ★ Mobile uses fixed positioning, desktop uses sticky. Keep mobile as fixed. */
     .chat__header {
-        position: fixed; /* ★ Keep fixed */
+        position: fixed; /* ★ Keep fixed for mobile */
         top: 0; left: 0; right: 0;
         z-index: 100; /* Highest */
         box-shadow: var(--shadow-sm);
         /* ★ Use variable height */
-        height: var(--header-height);
+        height: calc(var(--header-height) + env(safe-area-inset-top)); /* ★ Adjust height for safe area */
         /* ★ Apply safe area via padding INSIDE the header */
         padding-top: env(safe-area-inset-top);
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
@@ -386,15 +393,15 @@ body {
     }
 
     .chat__footer {
-        position: fixed; /* ★ Keep fixed */
+        position: fixed; /* ★ Keep fixed for mobile */
         bottom: 0; left: 0; right: 0;
         z-index: 100; /* Highest */
         border-top: 1px solid var(--color-border);
         background-color: #f1f3f5;
         display: flex;
         align-items: center;
-        /* ★ Use variable height */
-        height: var(--footer-height);
+        /* ★ Use variable height and adjust for safe area */
+        height: calc(var(--footer-height) + env(safe-area-inset-bottom));
         /* ★ Apply safe area via padding INSIDE the footer */
         padding-bottom: env(safe-area-inset-bottom);
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
@@ -453,18 +460,22 @@ body {
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
 /* Scrollbar Styling (Webkit) - Light Theme */
-/* Default Scrollbars */
+/* Default (Desktop) Scrollbars */
 .chat__history::-webkit-scrollbar { width: 8px; }
 .chat__history::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
-.profile__card::-webkit-scrollbar { width: 6px; }
-.profile__card::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
-.profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+.profile__card::-webkit-scrollbar { width: 8px; /* ★ デスクトップは少し太く */ }
+.profile__card::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+.profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
 .profile__card::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
 
 /* Mobile scrollbar moved inside mobile media query (already done) */
 @media (max-width: 767px) {
     .profile__card::-webkit-scrollbar { width: 4px; }
+    .profile__card::-webkit-scrollbar-track { background: transparent; /* モバイルではトラックを非表示にすることも */ }
+    .profile__card::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 2px; }
     .chat__history::-webkit-scrollbar { width: 6px; }
+    .chat__history::-webkit-scrollbar-track { background: transparent; /* モバイルではトラックを非表示にすることも */ }
+    .chat__history::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 3px; }
 }
