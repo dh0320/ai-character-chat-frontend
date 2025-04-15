@@ -1,4 +1,4 @@
-// script.js (履歴表示機能追加、アイコン表示デバッグログ追加)
+// script.js (履歴表示機能追加、アイコン表示 'model' -> 'ai' マッピング修正、デバッグログ付き)
 
 // --- Constants and Configuration ---
 const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api'; // 必要に応じて更新
@@ -32,7 +32,7 @@ const chatError = document.getElementById('chat-error'); // chat-error 要素も
 let isAiResponding = false;
 let typingIndicatorId = null;
 let characterId = null;
-let characterIconUrl = null; // ★ アイコンURLを保持するグローバル変数
+let characterIconUrl = null; // アイコンURLを保持するグローバル変数
 let hasLoadedHistory = false; // 履歴読み込み済みフラグ
 
 // --- Initialization ---
@@ -70,7 +70,7 @@ async function loadProfileAndHistoryData(id) {
         }
         const data = await response.json();
 
-        displayProfileData(data); // ★ プロファイル表示 (ここで characterIconUrl が設定される)
+        displayProfileData(data); // プロファイル表示 (ここで characterIconUrl が設定される)
 
         // 履歴データの表示処理
         if (data.history && Array.isArray(data.history) && data.history.length > 0) {
@@ -78,10 +78,11 @@ async function loadProfileAndHistoryData(id) {
             if (chatHistory) {
                 chatHistory.innerHTML = ''; // 既存の表示をクリア
                 data.history.forEach(message => {
-                    // サーバーからのデータ形式に合わせて role と message を渡す
                     if (message.role && message.message) {
-                        // ★ 履歴メッセージ表示時も appendMessage を使用
-                        appendMessage(message.role, message.message, false); // スクロールは最後に行う
+                        // ★★★ Firestore の 'model' を フロントエンドの 'ai' に変換 ★★★
+                        const senderType = message.role === 'model' ? 'ai' : message.role;
+                        // ★★★ 変換後の senderType ('ai' or 'user') を appendMessage に渡す ★★★
+                        appendMessage(senderType, message.message, false); // スクロールは最後に行う
                     } else {
                         console.warn("Skipping history item due to missing role or message:", message);
                     }
@@ -117,7 +118,7 @@ function displayProfileData(data) {
     const processedProfileText = rawProfileText.replaceAll('\\n', '\n');
     charProfileTextElement.textContent = processedProfileText;
 
-    // ★ グローバル変数 characterIconUrl を設定
+    // グローバル変数 characterIconUrl を設定
     if (data.iconUrl) {
         charIcon.src = data.iconUrl; // プロファイルビューのアイコンにも設定
         charIcon.alt = `${data.name || 'キャラクター'}のアイコン`;
@@ -218,6 +219,7 @@ async function sendMessage() {
         if (data && data.reply) {
             removeTypingIndicator();
             // AI応答メッセージ追加 (グローバル変数の characterIconUrl が使われる)
+            // API応答には role が含まれないので、固定で 'ai' を渡す
             appendMessage('ai', data.reply, true);
         } else {
             console.warn("API response OK, but 'reply' field missing.", data);
@@ -242,48 +244,48 @@ function setAiResponding(isResponding) {
 }
 
 // --- UI Update Functions (Chat) ---
-// ★★★ appendMessage 関数にデバッグログを追加 ★★★
+// appendMessage 関数 (デバッグログ付き、'ai' と 'model' の判定は 'ai' のまま)
 function appendMessage(senderType, text, shouldScroll = true) {
     if(!chatHistory) return;
     const messageId = `${senderType}-${Date.now()}`;
     const fragment = document.createDocumentFragment();
+    // ★ クラス名設定を 'model' ではなく 'ai' に統一する方向でも良い
+    //    その場合 CSS が .message--ai を対象にしていれば修正不要
+    // const rowClassSender = senderType === 'model' ? 'ai' : senderType; // 必要ならここで変換
+    // const messageRow = createMessageRowElement(rowClassSender, messageId);
+    // ↓↓↓ 一旦 'model' のままにしておく (CSS確認を推奨)
     const messageRow = createMessageRowElement(senderType, messageId);
     const icon = createIconElement(senderType);
     const content = createMessageContentElement(senderType, text);
 
     // --- アイコン設定とデバッグログ ---
+    // ★★★ senderType が 'ai' (loadProfileAndHistoryDataで変換済み) か 'error' の場合にアイコンを設定 ★★★
     if (senderType === 'ai' || senderType === 'error') {
-        // デバッグログ: 呼び出し時の characterIconUrl の値を確認
         console.log(`[appendMessage] Attempting to set icon for ${senderType}. characterIconUrl:`, characterIconUrl);
 
-        if (characterIconUrl) { // グローバル変数を参照
-             // アイコンURLがある場合の処理
+        if (characterIconUrl) {
              icon.style.backgroundImage = `url('${characterIconUrl}')`;
-             icon.style.backgroundColor = 'transparent'; // 背景を透明に
+             icon.style.backgroundColor = 'transparent';
              console.log(`[appendMessage] Set backgroundImage to: ${icon.style.backgroundImage}`);
         } else {
-             // アイコンURLがない場合の処理 (フォールバック)
-             icon.style.backgroundImage = ''; // スタイルをリセット
-             icon.style.backgroundColor = ''; // スタイルをリセット (CSSに任せる)
+             icon.style.backgroundImage = '';
+             icon.style.backgroundColor = '';
              console.log(`[appendMessage] No characterIconUrl found, using default styles.`);
         }
         if(senderType === 'error') {
-             icon.classList.add('message__icon--error'); // エラー用クラス
+             icon.classList.add('message__icon--error');
         }
     } else if (senderType === 'user') {
-        // ユーザーアイコンの場合 (通常CSSで処理)
          console.log(`[appendMessage] Sender is user, skipping background image.`);
     }
     // --- ログ追加ここまで ---
 
-    // メッセージ要素の組み立て
     if (senderType === 'user') { messageRow.appendChild(content); messageRow.appendChild(icon); }
-    else { messageRow.appendChild(icon); messageRow.appendChild(content); } // ai or error
+    else { messageRow.appendChild(icon); messageRow.appendChild(content); }
 
     fragment.appendChild(messageRow);
     chatHistory.appendChild(fragment);
 
-    // スクロール処理
     if (shouldScroll) {
         scrollToBottom(chatHistory, 'auto');
     }
@@ -292,18 +294,19 @@ function appendMessage(senderType, text, shouldScroll = true) {
 
 function createMessageRowElement(senderType, messageId) {
     const element = document.createElement('div');
-    element.className = `message message--${senderType === 'user' ? 'user' : 'ai'}`;
+    // ★ 'model' を 'ai' としてクラス設定する場合
+    // const className = senderType === 'model' ? 'ai' : senderType;
+    // element.className = `message message--${className === 'user' ? 'user' : 'ai'}`;
+    // ↓↓↓ 一旦 senderType のまま使う (CSS確認推奨)
+    element.className = `message message--${senderType === 'user' ? 'user' : 'ai'}`; // 'ai' or 'user'
     element.dataset.messageId = messageId;
-     if (senderType === 'error') { element.classList.add('message--error'); }
+     if (senderType === 'error') { element.classList.add('message--error'); } // error は別クラス
     return element;
 }
 
 function createIconElement(senderType) {
     const element = document.createElement('div');
     element.className = 'message__icon';
-    // senderTypeに応じたクラス追加はCSS側で行う方が一般的
-    // if(senderType === 'user') element.classList.add('message__icon--user');
-    // if(senderType === 'ai') element.classList.add('message__icon--ai');
     return element;
 }
 
@@ -314,12 +317,12 @@ function createMessageContentElement(senderType, text) {
     bubble.className = 'message__bubble';
 
     const linkRegex = /\[([^\]]+)]\((https?:\/\/[^\s)]+)\)/g;
-    const processedText = text.replaceAll('\n', '<br>'); // 改行を<br>に
+    const processedText = text.replaceAll('\n', '<br>');
 
     if (senderType !== 'error' && linkRegex.test(processedText)) {
          bubble.innerHTML = processedText.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     } else {
-         bubble.innerHTML = processedText; // <br> を有効にするため textContent ではなく innerHTML
+         bubble.innerHTML = processedText;
     }
 
     const timestamp = document.createElement('div');
@@ -337,10 +340,10 @@ function showTypingIndicator() {
     const messageId = `typing-${Date.now()}`;
     typingIndicatorId = messageId;
     const fragment = document.createDocumentFragment();
+    // タイピングインジケーターは 'ai' として表示
     const messageRow = createMessageRowElement('ai', messageId);
     const icon = createIconElement('ai');
 
-    // タイピングインジケーターのアイコンも characterIconUrl を使用
     if (characterIconUrl) {
         icon.style.backgroundImage = `url('${characterIconUrl}')`;
         icon.style.backgroundColor = 'transparent';
@@ -376,7 +379,7 @@ function appendChatError(message) {
     console.log("Appending chat error with message:", message);
     if (chatHistory) {
         removeTypingIndicator();
-        // エラーメッセージ表示時も characterIconUrl を参照してアイコンを設定
+        // エラーメッセージは 'error' タイプで表示
         appendMessage('error', message, true);
     } else {
         console.error("Chat history element not found, cannot append error:", message);
