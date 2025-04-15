@@ -1,4 +1,4 @@
-/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応 & 回り込み改善 & 上下端張り付き対応 & 残り回数表示対応 & ★ヘッダー重なり修正) */
+/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応 & 回り込み改善 & 上下端張り付き対応 & 残り回数表示対応) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -76,14 +76,17 @@
 }
 
 /* --- Basic Reset & Body --- */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 html {
     font-size: var(--font-size-base);
     height: 100%;
     -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
 }
 body {
-    /* ★ Ensure body has no margin */
     margin: 0;
     padding: 0;
     font-family: var(--font-family-base);
@@ -91,13 +94,12 @@ body {
     background-attachment: fixed;
     color: var(--color-text-primary);
     line-height: var(--line-height-base);
-    min-height: 100%; /* Use min-height */
+    min-height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: var(--color-bg-end);
     overscroll-behavior-y: contain; /* Prevent pull-to-refresh issues */
-    /* Ensure body takes full viewport height */
     height: 100vh;
     height: -webkit-fill-available; /* For mobile Safari */
 }
@@ -107,12 +109,13 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    /* ★ Ensure container has no padding affecting layout */
     padding: 0;
 }
 
 /* --- View Control --- */
-.hidden { display: none !important; }
+.hidden {
+    display: none !important;
+}
 
 /* --- Shared Section Styling --- */
 .view-section {
@@ -123,7 +126,7 @@ body {
     background-color: var(--color-surface);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-md);
-    overflow: hidden; /* ★ Keep on top level for sticky context */
+    overflow: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -172,12 +175,12 @@ body {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding: var(--spacing-lg);
-    padding-right: calc(var(--spacing-lg) + 6px); /* スクロールバー用 */
+    padding-right: calc(var(--spacing-lg) + 6px);
     background-color: var(--color-surface);
     scroll-padding-top: 10px;
     scroll-padding-bottom: 10px;
     width: 100%;
-    min-height: 0; /* flexアイテムが縮小できるように */
+    min-height: 0;
 }
 .profile__text {
     font-size: 0.95rem;
@@ -233,16 +236,20 @@ body {
 
 /* --- Chat View Styling --- */
 .chat {
-    padding: 0; margin: 0;
+    padding: 0;
+    margin: 0;
     border-radius: inherit;
-    height: 100%; width: 100%;
+    height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
     overflow: hidden;
 }
 .chat__container {
-    width: 100%; height: 100%; background-color: var(--color-surface);
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-surface);
     border-radius: inherit;
     position: relative;
     display: flex;
@@ -260,8 +267,8 @@ body {
     padding: 0 var(--spacing-lg);
     flex-shrink: 0;
     box-shadow: var(--shadow-sm);
-    z-index: 10; /* ヘッダーを前面に */
-    position: relative; /* デスクトップでは通常の位置 */
+    z-index: 10;
+    position: relative; /* Changed from sticky for desktop */
     width: 100%;
     justify-content: space-between;
     gap: var(--spacing-md);
@@ -287,17 +294,18 @@ body {
 }
 
 .chat__history {
-    flex-grow: 1; /* Takes up remaining space */
+    position: relative;
+    height: auto;
+    width: 100%;
+    flex-grow: 1;
     padding: var(--spacing-md) var(--spacing-lg);
     overflow-y: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    min-height: 0;
     background-color: var(--color-surface);
-    scroll-padding-bottom: var(--spacing-md); /* スクロール位置調整 */
-    z-index: 1; /* ヘッダーより背面 */
-    min-height: 0; /* flexアイテムが縮小できるように */
-    position: relative; /* For stacking context (optional) */
-    width: 100%;
+    scroll-padding-bottom: var(--spacing-md);
+    z-index: 1;
 }
 .chat__footer {
     height: var(--footer-height);
@@ -307,8 +315,8 @@ body {
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    z-index: 5; /* 履歴より前面、ヘッダーより背面 */
-    position: relative; /* デスクトップでは通常の位置 */
+    z-index: 5;
+    position: relative;
     width: 100%;
 }
 
@@ -319,11 +327,10 @@ body {
         border-radius: 0;
         box-shadow: none;
         max-width: 100%;
-        width: 100%; /* ★ Ensure full width */
-        height: 100vh;        /* ★ Ensure full viewport height */
-        height: -webkit-fill-available; /* ★ iOS Safari address bar handling */
+        width: 100%;
+        height: 100vh;
+        height: -webkit-fill-available;
         overflow: hidden;
-        /* ★ Ensure no padding/margin interfering with full height */
         padding: 0;
         margin: 0;
         position: relative;
@@ -332,22 +339,25 @@ body {
     }
 
     /* Profile view mobile adjustments */
-    .profile { /* Inherits height/width */ }
     .profile__header {
-        padding-top: calc(var(--spacing-xl) + env(safe-area-inset-top)); /* ★ Add safe-area inset */
+        padding-top: calc(var(--spacing-xl) + env(safe-area-inset-top));
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
         padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
         padding-bottom: var(--spacing-lg);
-        position: sticky; /* Keep sticky for profile */
-        top: 0;
     }
-    .profile__icon { width: 120px; height: 120px; margin-top: 0; }
-    .profile__name { font-size: 1.5rem; }
+    .profile__icon {
+        width: 120px;
+        height: 120px;
+        margin-top: 0;
+    }
+    .profile__name {
+        font-size: 1.5rem;
+    }
     .profile__card {
         padding-top: var(--spacing-lg);
         padding-bottom: var(--spacing-lg);
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
-        padding-right: calc(max(var(--spacing-lg), env(safe-area-inset-right)) + 4px); /* scrollbar */
+        padding-right: calc(max(var(--spacing-lg), env(safe-area-inset-right)) + 4px);
         scroll-padding-top: 5px;
         scroll-padding-bottom: 5px;
     }
@@ -355,22 +365,29 @@ body {
         padding-top: var(--spacing-md);
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
         padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
-        padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom)); /* ★ Add safe-area inset */
-        position: sticky; /* Keep sticky for profile */
-        bottom: 0;
+        padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
     }
 
     /* Chat view mobile adjustments */
-    .chat { height: 100%; }
-    .chat__container { border-radius: 0; height: 100%; position: static; overflow: hidden; }
+    .chat {
+        height: 100%;
+    }
+    .chat__container {
+        border-radius: 0;
+        height: 100%;
+        position: static;
+        overflow: hidden;
+    }
     .chat__header {
-        position: fixed; /* Chat uses fixed positioning on mobile */
-        top: 0; left: 0; right: 0;
-        z-index: 100; /* 最前面に */
+        /* ★ FIX: ヘッダーの高さを直接 var(--effective-header-height) に */
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
         box-shadow: var(--shadow-sm);
-        /* ★ Adjust for safe area */
-        height: calc(var(--effective-header-height) + env(safe-area-inset-top));
-        padding-top: env(safe-area-inset-top);
+        height: var(--effective-header-height); /* ← ここを修正 */
+        padding-top: env(safe-area-inset-top);  /* safe areaだけ適用 */
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
         padding-right: max(var(--spacing-md), env(safe-area-inset-right));
         padding-bottom: 0;
@@ -385,10 +402,10 @@ body {
         font-size: 1rem;
     }
     .chat__turn-counter {
-        /* Styles inherited */
+        /* モバイル時も同じスタイルでOK */
     }
     .chat__turn-counter.limit-reached {
-       /* Styles inherited */
+       /* 同上 */
     }
 
     .chat__history {
@@ -397,46 +414,49 @@ body {
         -webkit-overflow-scrolling: touch;
         background-color: var(--color-surface);
         scroll-behavior: smooth;
-        z-index: 1; /* ヘッダーより背面 */
-        position: static; /* Fixedヘッダー/フッターと組み合わせるため static に */
+        z-index: 1;
+        position: static;
         width: 100%;
-        box-sizing: border-box; /* padding を含めて計算 */
-
-        /* ▼▼▼【修正箇所】▼▼▼ */
-        /* ヘッダーの高さを確保 (safe-area分はヘッダー要素が持つため、ここでは含めない) */
-        /* ヘッダーの高さ + メッセージとの間の余白 */
-        padding-top: calc(var(--effective-header-height) + var(--spacing-md));
-        /* ▲▲▲【修正箇所】▲▲▲ */
-
-        /* フッターの高さ + safe-area + メッセージとの間の余白 */
+        /* ★ パディングでヘッダーとフッターの重なりを回避 */
+        padding-top: calc(var(--effective-header-height) + env(safe-area-inset-top) + var(--spacing-md));
         padding-bottom: calc(var(--effective-footer-height) + env(safe-area-inset-bottom) + var(--spacing-md));
-
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
         padding-right: max(var(--spacing-md), env(safe-area-inset-right));
     }
     .chat__footer {
-        position: fixed; /* Chat uses fixed positioning on mobile */
-        bottom: 0; left: 0; right: 0;
-        z-index: 100; /* 最前面に */
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
         border-top: 1px solid var(--color-border);
         background-color: #f1f3f5;
         display: flex;
         align-items: center;
-        /* ★ Adjust for safe area */
         height: calc(var(--effective-footer-height) + env(safe-area-inset-bottom));
         padding-bottom: env(safe-area-inset-bottom);
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
         padding-right: max(var(--spacing-md), env(safe-area-inset-right));
-        padding-top: var(--spacing-sm); /* Keep original top padding */
+        padding-top: var(--spacing-sm);
     }
 
     /* Scrollbar width adjustments for mobile */
-    .profile__card::-webkit-scrollbar { width: 4px; }
-    .chat__history::-webkit-scrollbar { width: 6px; }
+    .profile__card::-webkit-scrollbar {
+        width: 4px;
+    }
+    .chat__history::-webkit-scrollbar {
+        width: 6px;
+    }
 }
 
 /* --- Shared Input/Button Styles --- */
-.chat__input-form { display: flex; align-items: center; width: 100%; height: 100%; gap: var(--spacing-sm); }
+.chat__input-form {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    gap: var(--spacing-sm);
+}
 .chat__input {
     flex-grow: 1;
     padding: var(--spacing-sm) var(--spacing-lg);
@@ -450,42 +470,149 @@ body {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    min-height: 38px; /* 最小の高さを確保 */
-    line-height: 1.4; /* Ensure consistent line height */
-    align-self: stretch; /* Stretch vertically */
-    resize: none; /* Disable manual resizing */
-    overflow-y: auto; /* Enable scroll if content exceeds max-height */
-    max-height: 100px; /* Limit expansion */
+    min-height: 38px;
+    line-height: 1.4;
+    align-self: stretch;
+    resize: none;
+    overflow-y: auto;
+    max-height: 100px;
 }
-.chat__input:focus, .chat__input:focus-visible { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2); }
-.chat__input::placeholder { color: var(--color-text-secondary); }
-.chat__send-button { background-color: var(--color-accent); color: var(--color-accent-text); border: none; border-radius: var(--border-radius-circle); width: 48px; height: 48px; flex-shrink: 0; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color var(--transition-duration) ease; }
-.chat__send-button:hover { background-color: var(--color-accent-hover); }
-.chat__send-button:disabled { background-color: var(--color-icon-placeholder); cursor: not-allowed; }
-.chat__send-button svg { width: 24px; height: 24px; fill: currentColor; }
+.chat__input:focus, .chat__input:focus-visible {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2);
+}
+.chat__input::placeholder {
+    color: var(--color-text-secondary);
+}
+.chat__send-button {
+    background-color: var(--color-accent);
+    color: var(--color-accent-text);
+    border: none;
+    border-radius: var(--border-radius-circle);
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color var(--transition-duration) ease;
+}
+.chat__send-button:hover {
+    background-color: var(--color-accent-hover);
+}
+.chat__send-button:disabled {
+    background-color: var(--color-icon-placeholder);
+    cursor: not-allowed;
+}
+.chat__send-button svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
 
 /* --- Message Styling --- */
-/* ... (メッセージ関連のスタイルは変更なし) ... */
-.message { display: flex; align-items: flex-start; margin-bottom: var(--spacing-lg); max-width: var(--message-max-width); opacity: 0; animation: fadeIn var(--message-animate-duration) ease forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-.message__icon { width: 40px; height: 40px; border-radius: var(--border-radius-circle); background-color: var(--color-icon-placeholder); background-size: cover; background-position: center; background-repeat: no-repeat; flex-shrink: 0; margin-top: 0; box-shadow: var(--shadow-sm); }
-.message--user .message__icon { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236c757d"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'); background-color: transparent; }
-.message--error .message__icon { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23dc3545"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>'); background-color: transparent; }
-.message__content { margin: 0 var(--spacing-md); display: flex; flex-direction: column; min-width: 0; }
-.message__bubble { padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius-lg); word-wrap: break-word; line-height: var(--line-height-base); box-shadow: var(--shadow-sm); position: relative; max-width: 100%; background-color: var(--color-ai-bubble-bg); color: var(--color-text-primary); }
-.message__bubble a { color: var(--link-color); text-decoration: underline; }
-.message__bubble a:hover { text-decoration: none; }
-.message__timestamp { font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: var(--spacing-xs); padding: 0 var(--spacing-sm); }
-.message--ai { margin-right: auto; }
-.message--ai .message__bubble { border-bottom-left-radius: var(--border-radius-sm); }
-.message--ai .message__timestamp { align-self: flex-start; }
-.message--user { flex-direction: row-reverse; margin-left: auto; }
-.message--user .message__content { align-items: flex-end; }
-.message--user .message__bubble { background-color: var(--color-accent); color: var(--color-accent-text); border-bottom-right-radius: var(--border-radius-sm); }
-.message--user .message__bubble a { color: inherit; text-decoration: underline; font-weight: var(--font-weight-medium); }
-.message--user .message__timestamp { align-self: flex-end; }
-.message--error .message__bubble { background-color: var(--color-error-bg); color: var(--color-error-text); border: 1px solid rgba(114, 28, 36, 0.3); font-weight: var(--font-weight-medium); border-bottom-left-radius: var(--border-radius-sm); }
-.message--error .message__timestamp { display: none; }
+.message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-lg);
+    max-width: var(--message-max-width);
+    opacity: 0;
+    animation: fadeIn var(--message-animate-duration) ease forwards;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.message__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--border-radius-circle);
+    background-color: var(--color-icon-placeholder);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+    margin-top: 0;
+    box-shadow: var(--shadow-sm);
+}
+.message--user .message__icon {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236c757d"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
+    background-color: transparent;
+}
+.message--error .message__icon {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23dc3545"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>');
+    background-color: transparent;
+}
+.message__content {
+    margin: 0 var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.message__bubble {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+    word-wrap: break-word;
+    line-height: var(--line-height-base);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    max-width: 100%;
+    background-color: var(--color-ai-bubble-bg);
+    color: var(--color-text-primary);
+}
+.message__bubble a {
+    color: var(--link-color);
+    text-decoration: underline;
+}
+.message__bubble a:hover {
+    text-decoration: none;
+}
+.message__timestamp {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-xs);
+    padding: 0 var(--spacing-sm);
+}
+.message--ai {
+    margin-right: auto;
+}
+.message--ai .message__bubble {
+    border-bottom-left-radius: var(--border-radius-sm);
+}
+.message--ai .message__timestamp {
+    align-self: flex-start;
+}
+.message--user {
+    flex-direction: row-reverse;
+    margin-left: auto;
+}
+.message--user .message__content {
+    align-items: flex-end;
+}
+.message--user .message__bubble {
+    background-color: var(--color-accent);
+    color: var(--color-accent-text);
+    border-bottom-right-radius: var(--border-radius-sm);
+}
+.message--user .message__bubble a {
+    color: inherit;
+    text-decoration: underline;
+    font-weight: var(--font-weight-medium);
+}
+.message--user .message__timestamp {
+    align-self: flex-end;
+}
+.message--error .message__bubble {
+    background-color: var(--color-error-bg);
+    color: var(--color-error-text);
+    border: 1px solid rgba(114, 28, 36, 0.3);
+    font-weight: var(--font-weight-medium);
+    border-bottom-left-radius: var(--border-radius-sm);
+}
+.message--error .message__timestamp {
+    display: none;
+}
 
 /* Error message styling (shared) */
 .error-message {
@@ -499,26 +626,70 @@ body {
 }
 
 /* Typing Indicator */
-.typing-indicator { display: flex; align-items: center; padding: 0.6rem 0.9rem; }
-.typing-indicator__dot { height: 8px; width: 8px; background-color: var(--color-text-secondary); border-radius: 50%; display: inline-block; margin: 0 2px; animation: bounce 1.3s infinite ease-in-out both; }
-.typing-indicator__dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-indicator__dot:nth-child(2) { animation-delay: -0.16s; }
-.typing-indicator__dot:nth-child(3) { animation-delay: -0.0s; }
-@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 0.9rem;
+}
+.typing-indicator__dot {
+    height: 8px;
+    width: 8px;
+    background-color: var(--color-text-secondary);
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 2px;
+    animation: bounce 1.3s infinite ease-in-out both;
+}
+.typing-indicator__dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+.typing-indicator__dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+.typing-indicator__dot:nth-child(3) {
+    animation-delay: 0s;
+}
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
+}
 
 /* Scrollbar Styling (Webkit) - Light Theme */
-/* ... (スクロールバーのスタイルは変更なし) ... */
-.chat__history::-webkit-scrollbar { width: 8px; }
-.chat__history::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-.chat__history::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
-.chat__history::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
-.profile__card::-webkit-scrollbar { width: 6px; }
-.profile__card::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
-.profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
-.profile__card::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
+.chat__history::-webkit-scrollbar {
+    width: 8px;
+}
+.chat__history::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+.chat__history::-webkit-scrollbar-thumb {
+    background: #cccccc;
+    border-radius: 4px;
+}
+.chat__history::-webkit-scrollbar-thumb:hover {
+    background: #b0b0b0;
+}
+.profile__card::-webkit-scrollbar {
+    width: 6px;
+}
+.profile__card::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+.profile__card::-webkit-scrollbar-thumb {
+    background: #cccccc;
+    border-radius: 3px;
+}
+.profile__card::-webkit-scrollbar-thumb:hover {
+    background: #b0b0b0;
+}
 
 /* Mobile scrollbar moved inside media query */
 @media (max-width: 767px) {
-    .profile__card::-webkit-scrollbar { width: 4px; }
-    .chat__history::-webkit-scrollbar { width: 6px; }
+    .profile__card::-webkit-scrollbar {
+        width: 4px;
+    }
+    .chat__history::-webkit-scrollbar {
+        width: 6px;
+    }
 }
