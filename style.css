@@ -1,4 +1,4 @@
-/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応 & 回り込み改善 & 上下端張り付き対応) */
+/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応 & 回り込み改善 & 上下端張り付き対応 & 残り回数表示対応) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -10,14 +10,15 @@
     --color-bg-end: #f1f3f5;
     --color-surface: #ffffff;
     --color-text-primary: #212529;
-    --color-text-secondary: #42474d;
+    --color-text-secondary: #42474d; /* 残り回数の通常色に使用 */
     --color-border: #dee2e6;
     --color-accent: #004080;
     --color-accent-hover: #003366;
-    --color-accent-text: #ffffff;
+    --color-accent-text: #ffffff; /* ヘッダーテキストのデフォルト色 */
     --color-ai-bubble-bg: #e9ecef;
     --color-error-bg: #f8d7da;
     --color-error-text: #721c24;
+    --color-limit-reached: #dc3545; /* 上限到達時の色 (エラーに近い赤系) */
     --color-icon-placeholder: #ced4da;
     --link-color: #0056b3;
 
@@ -25,7 +26,7 @@
     --font-family-base: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-size-base: 1rem; /* 16px */
     --font-size-sm: 0.875rem; /* 14px */
-    --font-size-xs: 0.75rem; /* 12px */
+    --font-size-xs: 0.75rem; /* 12px - 残り回数表示に使用 */
     --line-height-base: 1.65;
     --font-weight-normal: 400;
     --font-weight-medium: 500;
@@ -128,31 +129,27 @@ body {
     flex-direction: column;
 }
 
-/* --- Profile View Styling (Assumes recommended HTML structure) --- */
+/* --- Profile View Styling --- */
+/* ... (プロファイル関連のスタイルは変更なし) ... */
 .profile {
-    /* profile is the main flex container for header, card, footer */
     text-align: center;
     display: flex;
     flex-direction: column;
-    flex-grow: 1; /* Should fill parent if container allows */
+    flex-grow: 1;
     height: 100%;
     width: 100%;
     position: relative;
-    /* overflow: hidden; */ /* Removed/Commented for sticky */
 }
-
 .profile__header {
-    /* This is the sticky header */
     position: sticky;
     top: 0;
     z-index: 10;
     background-color: var(--color-surface);
     padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
-    flex-shrink: 0; /* Prevent shrinking */
+    flex-shrink: 0;
     text-align: center;
     width: 100%;
 }
-
 .profile__icon {
     width: 150px;
     height: 150px;
@@ -167,47 +164,39 @@ body {
     font-size: 1.75rem;
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
-    margin-bottom: var(--spacing-sm); /* Space before error message if present */
+    margin-bottom: var(--spacing-sm);
 }
-
 .profile__card {
-    /* This is the scrollable area between header and footer */
-    flex-grow: 1; /* Take available space */
+    flex-grow: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
-    padding: var(--spacing-lg); /* Inner padding for the content */
-    /* Adjust right padding for scrollbar */
+    padding: var(--spacing-lg);
     padding-right: calc(var(--spacing-lg) + 6px);
-    background-color: var(--color-surface); /* Ensure background */
-    scroll-padding-top: 10px; /* Scroll snap buffer */
-    scroll-padding-bottom: 10px; /* Scroll snap buffer */
+    background-color: var(--color-surface);
+    scroll-padding-top: 10px;
+    scroll-padding-bottom: 10px;
     width: 100%;
-    min-height: 0; /* Important for flex-grow */
+    min-height: 0;
 }
-
 .profile__text {
-    /* Actual profile text styling */
     font-size: 0.95rem;
     line-height: 1.75;
     color: var(--color-text-secondary);
     white-space: pre-wrap;
     text-align: left;
 }
-
 .profile__footer {
-    /* This is the sticky footer */
     position: sticky;
     bottom: 0;
     z-index: 10;
     background-color: var(--color-surface);
     padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl) var(--spacing-lg);
     border-top: 1px solid var(--color-border);
-    flex-shrink: 0; /* Prevent shrinking */
+    flex-shrink: 0;
     text-align: center;
     width: 100%;
 }
-
 .profile__button {
     display: inline-block;
     padding: var(--spacing-sm) var(--spacing-xl);
@@ -233,15 +222,12 @@ body {
     cursor: not-allowed;
     transform: none;
 }
-
-/* Error message styling (now potentially inside header or footer) */
 #profile-error.error-message {
-    margin-top: var(--spacing-sm); /* Adjust spacing if needed */
-    /* padding, font-size inherited from .error-message */
-    max-width: calc(100% - 2 * var(--spacing-lg)); /* Prevent overflow */
-    margin-left: auto; /* Center it if needed */
+    margin-top: var(--spacing-sm);
+    max-width: calc(100% - 2 * var(--spacing-lg));
+    margin-left: auto;
     margin-right: auto;
-    display: block; /* Ensure it takes space */
+    display: block;
 }
 
 
@@ -266,10 +252,44 @@ body {
 
 /* Default (Desktop) Styles */
 .chat__header {
-    height: var(--header-height); background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover)); color: var(--color-accent-text); display: flex; align-items: center; padding: 0 var(--spacing-lg);
-    flex-shrink: 0; box-shadow: var(--shadow-sm); z-index: 10; position: relative; width: 100%;
+    height: var(--header-height);
+    background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover));
+    color: var(--color-accent-text);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-lg);
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+    z-index: 10;
+    position: relative; /* Changed from sticky for simplicity if not needed */
+    width: 100%;
+    /* ▼▼▼ タイトルとカウンターを左右に配置 ▼▼▼ */
+    justify-content: space-between;
+    gap: var(--spacing-md); /* タイトルとカウンターの間の最小限のスペース */
 }
-.chat__title { font-size: 1.1rem; font-weight: var(--font-weight-medium); }
+.chat__title {
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-medium);
+    /* ▼▼▼ 長い場合に省略 ▼▼▼ */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1; /* タイトルがスペースを取るように */
+    min-width: 0; /* flexアイテムの縮小問題を回避 */
+}
+/* ▼▼▼ 残り回数表示用のスタイルを追加 ▼▼▼ */
+.chat__turn-counter {
+    font-size: var(--font-size-xs); /* 小さめのフォント */
+    color: rgba(255, 255, 255, 0.85); /* ヘッダー背景に合わせて少し薄い白 */
+    white-space: nowrap; /* 改行しない */
+    flex-shrink: 0; /* 縮まないように */
+}
+.chat__turn-counter.limit-reached {
+    color: #ffcdd2; /* 上限到達時の色（例: 薄い赤）*/
+    font-weight: var(--font-weight-medium);
+}
+/* ▲▲▲ 残り回数表示用のスタイルを追加 ▲▲▲ */
+
 .chat__history {
     position: relative; height: auto; width: 100%;
     flex-grow: 1;
@@ -295,7 +315,7 @@ body {
         box-shadow: none;
         max-width: 100%;
         width: 100%; /* ★ Ensure full width */
-        height: 100vh;                 /* ★ Ensure full viewport height */
+        height: 100vh;             /* ★ Ensure full viewport height */
         height: -webkit-fill-available; /* ★ iOS Safari address bar handling */
         overflow: hidden;
         /* ★ Ensure no padding/margin interfering with full height */
@@ -306,61 +326,34 @@ body {
         flex-direction: column;
     }
 
-    /* Profile view itself fills the view-section */
-    .profile {
-        /* Inherits height/width from view-section */
-    }
-
-    /* ★ Ensure header sticks exactly to the top & handles safe area */
+    /* Profile view mobile adjustments */
+    .profile { /* Inherits height/width */ }
     .profile__header {
-        /* sticky, top, z-index, background, shrink, align, width inherited/set */
         padding-top: calc(var(--spacing-xl) + env(safe-area-inset-top)); /* ★ Add safe-area inset */
-        padding-left: max(var(--spacing-lg), env(safe-area-inset-left)); /* Consider horizontal safe area */
-        padding-right: max(var(--spacing-lg), env(safe-area-inset-right));/* Consider horizontal safe area */
+        padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
         padding-bottom: var(--spacing-lg);
     }
-
-    /* Adjust profile elements for mobile */
-    .profile__icon {
-        width: 120px;
-        height: 120px;
-        margin-top: 0;
-    }
-    .profile__name {
-        font-size: 1.5rem;
-    }
-
+    .profile__icon { width: 120px; height: 120px; margin-top: 0; }
+    .profile__name { font-size: 1.5rem; }
     .profile__card {
-        /* grow, overflow, scroll, background, width, min-height inherited/set */
-        /* Adjust padding considering safe area only if needed, usually content flows fine */
         padding-top: var(--spacing-lg);
         padding-bottom: var(--spacing-lg);
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
         padding-right: calc(max(var(--spacing-lg), env(safe-area-inset-right)) + 4px); /* scrollbar */
-        /* Adjust scroll padding */
         scroll-padding-top: 5px;
         scroll-padding-bottom: 5px;
     }
-
-    /* ★ Ensure footer sticks exactly to the bottom & handles safe area */
     .profile__footer {
-        /* sticky, bottom, z-index, background, border, shrink, align, width inherited/set */
         padding-top: var(--spacing-md);
-        padding-left: max(var(--spacing-lg), env(safe-area-inset-left)); /* Consider horizontal safe area */
-        padding-right: max(var(--spacing-lg), env(safe-area-inset-right));/* Consider horizontal safe area */
+        padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
         padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom)); /* ★ Add safe-area inset */
     }
 
-    /* Chat view mobile adjustments (Copied from previous response) */
-    .chat {
-        height: 100%;
-    }
-    .chat__container {
-        border-radius: 0;
-        height: 100%;
-        position: static;
-        overflow: hidden;
-    }
+    /* Chat view mobile adjustments */
+    .chat { height: 100%; }
+    .chat__container { border-radius: 0; height: 100%; position: static; overflow: hidden; }
     .chat__header {
         position: fixed; /* Chat uses fixed positioning on mobile */
         top: 0; left: 0; right: 0;
@@ -369,14 +362,30 @@ body {
         /* ★ Adjust for safe area */
         height: calc(var(--effective-header-height) + env(safe-area-inset-top));
         padding-top: env(safe-area-inset-top);
-        padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
-        padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
-        /* Align items might need adjustment if content height changes */
+        padding-left: max(var(--spacing-md), env(safe-area-inset-left)); /* Adjusted from lg */
+        padding-right: max(var(--spacing-md), env(safe-area-inset-right)); /* Adjusted from lg */
+        padding-bottom: 0; /* Padding is for top/bottom */
         display: flex;
         align-items: center; /* Re-center vertically */
         background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover)); /* Ensure background */
         color: var(--color-accent-text); /* Ensure text color */
+        /* ▼▼▼ モバイルでも左右に配置 ▼▼▼ */
+        justify-content: space-between;
+        gap: var(--spacing-sm); /* モバイル用に少し狭く */
     }
+    .chat__title {
+        font-size: 1rem; /* モバイル用に少し小さく */
+         /* 他の省略スタイルは継承 */
+    }
+    /* ▼▼▼ モバイル用のカウンターもスタイル適用 (デスクトップと同じでOK) ▼▼▼ */
+    .chat__turn-counter {
+        /* Styles inherited/same as desktop */
+    }
+    .chat__turn-counter.limit-reached {
+       /* Styles inherited/same as desktop */
+    }
+    /* ▲▲▲ ▲▲▲ */
+
     .chat__history {
         flex-grow: 1;
         overflow-y: auto;
@@ -408,7 +417,7 @@ body {
         padding-top: var(--spacing-sm); /* Keep original top padding */
     }
 
-    /* Scrollbar width adjustments */
+    /* Scrollbar width adjustments for mobile */
     .profile__card::-webkit-scrollbar { width: 4px; }
     .chat__history::-webkit-scrollbar { width: 6px; }
 }
@@ -443,6 +452,7 @@ body {
 .chat__send-button svg { width: 24px; height: 24px; fill: currentColor; }
 
 /* --- Message Styling --- */
+/* ... (メッセージ関連のスタイルは変更なし) ... */
 .message { display: flex; align-items: flex-start; margin-bottom: var(--spacing-lg); max-width: var(--message-max-width); opacity: 0; animation: fadeIn var(--message-animate-duration) ease forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .message__icon { width: 40px; height: 40px; border-radius: var(--border-radius-circle); background-color: var(--color-icon-placeholder); background-size: cover; background-position: center; background-repeat: no-repeat; flex-shrink: 0; margin-top: 0; box-shadow: var(--shadow-sm); }
@@ -484,12 +494,11 @@ body {
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
 /* Scrollbar Styling (Webkit) - Light Theme */
+/* ... (スクロールバーのスタイルは変更なし) ... */
 .chat__history::-webkit-scrollbar { width: 8px; }
 .chat__history::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
 .chat__history::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
-
-/* Profile scrollbar styling */
 .profile__card::-webkit-scrollbar { width: 6px; }
 .profile__card::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
 .profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
