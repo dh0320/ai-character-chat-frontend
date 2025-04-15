@@ -1,4 +1,4 @@
-/* style.css (レイアウト修正 - PCヘッダー/フッター固定対応版) */
+/* style.css (レイアウト修正 - スマホ プロフィールスクロール対応試行版) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -178,6 +178,9 @@ body {
     scroll-padding-bottom: 10px; /* Padding for scroll ends */
     width: 100%;
     min-height: 0; /* For flexbox */
+    /* ★ ADDED flex properties for clarity (for default/desktop too) */
+    flex-shrink: 1;
+    flex-basis: 0; /* or auto */
     /* Safe area for profile card content (applied on mobile) */
 }
 .profile__text {
@@ -334,7 +337,18 @@ body {
     .profile__icon { width: 120px; height: 120px; margin-top: 0; }
     .profile__name { font-size: 1.5rem; }
     .profile__card {
-        flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; background-color: var(--color-surface); scroll-padding-top: 5px; scroll-padding-bottom: 5px; width: 100%; min-height: 0;
+        flex-grow: 1;
+        /* ★ UPDATED: Added flex properties for clarity */
+        flex-shrink: 1;
+        flex-basis: 0; /* Use 0 for basis when grow/shrink are primary */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        background-color: var(--color-surface);
+        scroll-padding-top: 5px;
+        scroll-padding-bottom: 5px;
+        width: 100%;
+        min-height: 0; /* Keep this for flex shrinking */
         /* ★ Adjust padding for safe area using max() */
         padding-top: var(--spacing-lg);
         padding-bottom: var(--spacing-lg); /* Content padding */
@@ -420,6 +434,7 @@ body {
     }
 
     /* Scrollbar width adjustments for mobile */
+    /* These were already correct inside the media query */
     .profile__card::-webkit-scrollbar { width: 4px; }
     .chat__history::-webkit-scrollbar { width: 6px; }
 }
@@ -480,5 +495,4 @@ body {
 .profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
 .profile__card::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
 
-/* Mobile scrollbar moved inside mobile media query (already done) */
-/* Note: Redundant media query block for scrollbars removed as they are already inside the main mobile query */
+/* Mobile scrollbar styles are correctly placed inside the mobile media query */
