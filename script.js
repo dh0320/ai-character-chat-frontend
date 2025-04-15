@@ -1,651 +1,385 @@
-// script.js (履歴表示機能追加、アイコン表示 'model' -> 'ai' マッピング修正、残り回数表示追加, visualViewport対応追加)
+/* style.css (キーボード対応 V3) */
 
-// --- Constants and Configuration ---
-const API_ENDPOINT = 'https://asia-northeast1-aillm-456406.cloudfunctions.net/my-chat-api'; // 必要に応じて更新
-const WELCOME_MESSAGE = 'チャットを開始します！'; // 履歴がない場合に表示
-const ERROR_MESSAGES = {
-    NETWORK: 'ネットワークエラーが発生しました。接続を確認してください。',
-    API_RESPONSE: 'AIからの応答がありませんでした。',
-    GENERAL: 'エラーが発生しました。しばらくしてからもう一度お試しください。',
-    INVALID_ID: 'キャラクターが見つからないか、アクセスが許可されていません。',
-    ID_FETCH_ERROR: 'URLからキャラクターIDを取得できませんでした。',
-    PROFILE_FETCH_ERROR: 'キャラクター情報の取得に失敗しました。',
-    LIMIT_REACHED: 'このキャラクターとの会話上限に達しました。'
-};
+/* --- Google Font Import --- */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
 
-// --- DOM Elements ---
-const profileView = document.getElementById('profile-view');
-const charIcon = document.getElementById('char-icon');
-const charName = document.getElementById('char-name');
-const charProfileTextElement = document.getElementById('char-profile');
-const startChatButton = document.getElementById('start-chat-button');
-const profileError = document.getElementById('profile-error');
-const chatView = document.getElementById('chat-view');
-const chatContainer = document.querySelector('#chat-view .chat__container'); // ★ Chat Containerを取得 (追加)
-const chatHeader = document.querySelector('#chat-view .chat__header');      // ★ Chat Headerを取得 (追加)
-const chatHistory = document.getElementById('chat-history');
-const chatFooter = document.querySelector('#chat-view .chat__footer');      // ★ Chat Footerを取得 (追加)
-const chatForm = document.getElementById('chat-input-form');
-const userInput = document.getElementById('user-input');
-const sendButton = document.getElementById('send-button');
-const chatHeaderTitle = document.getElementById('chat-header-title');
-// const chatError = document.getElementById('chat-error'); // HTMLに存在しないためコメントアウト
-const turnCounterElement = document.getElementById('turn-counter');
+/* --- CSS Variables --- */
+:root {
+    /* Colors */
+    --color-bg: #f8f9fa;
+    --color-bg-end: #f1f3f5;
+    --color-surface: #ffffff;
+    --color-text-primary: #212529;
+    --color-text-secondary: #42474d; /* 残り回数の通常色に使用 */
+    --color-border: #dee2e6;
+    --color-accent: #004080;
+    --color-accent-hover: #003366;
+    --color-accent-text: #ffffff; /* ヘッダーテキストのデフォルト色 */
+    --color-ai-bubble-bg: #e9ecef;
+    --color-error-bg: #f8d7da;
+    --color-error-text: #721c24;
+    --color-limit-reached: #dc3545; /* 上限到達時の色 (エラーに近い赤系) */
+    --color-icon-placeholder: #ced4da;
+    --link-color: #0056b3;
 
-// --- State ---
-let isAiResponding = false;
-let typingIndicatorId = null;
-let characterId = null;
-let characterIconUrl = null; // アイコンURLを保持するグローバル変数
-let hasLoadedHistory = false; // 履歴読み込み済みフラグ
-let currentTurnCount = 0;
-let maxTurns = 0; // ここではメッセージ総数(turnCount)の上限値
-let isKeyboardOpen = false; // ★ キーボード状態フラグ (追加)
-let initialContainerHeightStyle = ''; // ★ 初期コンテナ高さを保存 (追加)
-let initialFooterBottomStyle = ''; // ★ 初期フッターbottomを保存 (追加)
+    /* Typography */
+    --font-family-base: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-size-base: 1rem; /* 16px */
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-xs: 0.75rem; /* 12px - 残り回数表示に使用 */
+    --line-height-base: 1.65;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
 
-// --- Initialization ---
-document.addEventListener('DOMContentLoaded', async () => {
-    characterId = getUniqueIdFromUrl();
-    if (!characterId) {
-        displayProfileError(ERROR_MESSAGES.ID_FETCH_ERROR);
-        return;
-    }
-    await loadProfileAndHistoryData(characterId); // プロファイルと履歴を読み込む
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-xxl: 3rem;
 
-    if(startChatButton) { startChatButton.addEventListener('click', startChat); }
-    else { console.error("Start chat button not found"); }
+    /* Borders */
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.5rem;
+    --border-radius-lg: 1rem;
+    --border-radius-pill: 50rem;
+    --border-radius-circle: 50%;
 
-    if(chatForm) { chatForm.addEventListener('submit', handleFormSubmit); }
-    else { console.error("Chat form not found"); }
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.12);
 
-    if(userInput) {
-        userInput.addEventListener('keypress', handleInputKeyPress);
-        // Optional: Adjust textarea height dynamically
-        // userInput.addEventListener('input', adjustTextareaHeight);
-    } else { console.error("User input not found"); }
+    /* Others */
+    --header-height-desktop: 60px;
+    --footer-height-desktop: 75px;
+    --header-height-mobile: 55px;
+    --footer-height-mobile: 65px;
+    --message-max-width: 80%;
+    --transition-duration: 0.2s;
+    --message-animate-duration: 0.3s;
+    --chat-container-max-width: 800px;
 
-    setupVisualViewportListener(); // ★ visualViewportリスナーを設定 (追加)
-});
+    /* ヘッダー/フッターの高さを取得 (デフォルトはデスクトップ用) */
+    --effective-header-height: var(--header-height-desktop);
+    --effective-footer-height: var(--footer-height-desktop);
+}
 
-// --- Profile & History Loading ---
-async function loadProfileAndHistoryData(id) {
-    showLoadingState(true);
-    if(profileError) profileError.style.display = 'none';
-    try {
-        const response = await fetch(`${API_ENDPOINT}?id=${id}`, { method: 'GET' });
-        if (!response.ok) {
-            let errorMsg = ERROR_MESSAGES.PROFILE_FETCH_ERROR;
-            try {
-                const errData = await response.json();
-                errorMsg = (response.status === 404 && errData.error) ? ERROR_MESSAGES.INVALID_ID : (errData.error || `HTTP ${response.status}`);
-            } catch (e) { errorMsg = `HTTP ${response.status}`; }
-            throw new Error(errorMsg);
-        }
-        const data = await response.json();
-
-        // ★★★ プロファイル表示関数内で回数も更新 ★★★
-        displayProfileData(data); // ここで characterIconUrl, currentTurnCount, maxTurns が設定される
-
-        // 履歴データの表示処理
-        if (data.history && Array.isArray(data.history)) { // data.historyが存在し、配列であることを確認
-             if (chatHistory) { // chatHistory要素が存在することを確認
-                chatHistory.innerHTML = ''; // 既存の表示をクリア
-                if (data.history.length > 0) { // 履歴が空でない場合
-                    console.log(`Loading ${data.history.length} messages from history...`);
-                    data.history.forEach(message => {
-                        if (message.role && message.message) {
-                            // ★★★ Firestore の 'model' を フロントエンドの 'ai' に変換 ★★★
-                            const senderType = message.role === 'model' ? 'ai' : message.role;
-                            // ★★★ 変換後の senderType ('ai' or 'user') を appendMessage に渡す ★★★
-                            appendMessage(senderType, message.message, false); // スクロールは最後に行う
-                        } else {
-                            console.warn("Skipping history item due to missing role or message:", message);
-                        }
-                    });
-                    hasLoadedHistory = true; // 履歴読み込みフラグを立てる
-                     // 履歴表示後、一番下にスクロール
-                     // 'auto' で瞬時にスクロール
-                    scrollToBottom(chatHistory, 'auto');
-                } else {
-                    console.log("History data found but is empty.");
-                    hasLoadedHistory = false; // 履歴がない場合もフラグ更新
-                }
-             } else {
-                 console.error("Chat history element not found.");
-                 hasLoadedHistory = false;
-             }
-        } else {
-            console.log("No history data found in response.");
-            hasLoadedHistory = false; // 履歴がない場合もフラグ更新
-            if (chatHistory) chatHistory.innerHTML = ''; // 履歴要素があればクリア
-        }
-
-    } catch (error) {
-        console.error("Failed to load profile and history data:", error);
-        displayProfileError(error.message || ERROR_MESSAGES.PROFILE_FETCH_ERROR);
-    } finally {
-        showLoadingState(false);
+/* スマホ用の変数上書き */
+@media (max-width: 767px) {
+    :root {
+        --effective-header-height: var(--header-height-mobile);
+        --effective-footer-height: var(--footer-height-mobile);
     }
 }
 
+/* --- Basic Reset & Body --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-function displayProfileData(data) {
-    // 要素チェックを強化
-    if (!profileView || !charName || !charProfileTextElement || !charIcon || !chatHeaderTitle || !turnCounterElement || !startChatButton) {
-        console.error("One or more profile display elements not found.");
-        return;
-    }
-    if (!data) { displayProfileError("キャラクターデータが見つかりません。"); return; };
-
-    charName.textContent = data.name || '名前なし';
-    chatHeaderTitle.textContent = data.name || 'AIキャラクター'; // ★ チャットヘッダーも更新
-
-    const rawProfileText = data.profileText || 'プロフィール情報がありません。';
-    const processedProfileText = rawProfileText.replaceAll('\\n', '\n');
-    charProfileTextElement.textContent = processedProfileText;
-
-    // グローバル変数 characterIconUrl を設定
-    if (data.iconUrl) {
-        charIcon.src = data.iconUrl; // プロファイルビューのアイコンにも設定
-        charIcon.alt = `${data.name || 'キャラクター'}のアイコン`;
-        characterIconUrl = data.iconUrl; // グローバル変数に格納
-        console.log("Character Icon URL set:", characterIconUrl);
-    } else {
-        charIcon.alt = 'アイコンなし';
-        charIcon.src = 'placeholder-icon.png'; // ★ Placeholder画像に戻すか確認
-        characterIconUrl = null; // アイコンがない場合は null
-        console.log("No Character Icon URL found.");
-    }
-
-    // ★★★ 会話回数と上限を設定し、カウンターを更新 ★★★
-    currentTurnCount = data.currentTurnCount ?? 0; // nullish coalescing で 0 をデフォルトに
-    maxTurns = data.maxTurns ?? 0; // 同様にデフォルトを0に
-    updateTurnCounter(currentTurnCount, maxTurns); // 残り回数を表示
-
-    startChatButton.disabled = false; // ★ ボタンを有効化
+html {
+    font-size: var(--font-size-base);
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
 }
 
-function displayProfileError(message) {
-    if (!profileView || !charName || !charProfileTextElement || !profileError || !startChatButton || !turnCounterElement) return; // ★ 要素チェック
-    charName.textContent = 'エラー';
-    charProfileTextElement.textContent = 'キャラクター情報を読み込めませんでした。';
-    const displayMessage = Object.values(ERROR_MESSAGES).includes(message) ? message : ERROR_MESSAGES.PROFILE_FETCH_ERROR;
-    profileError.textContent = displayMessage;
-    profileError.style.display = 'block';
-    startChatButton.disabled = true;
-    // ★ エラー時はカウンターも非表示または初期状態にする
-    turnCounterElement.textContent = ''; // または '残数: -' など
-    turnCounterElement.classList.remove('limit-reached'); // スタイルもリセット
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-family-base);
+    background-image: linear-gradient(to bottom, var(--color-bg), var(--color-bg-end));
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    line-height: var(--line-height-base);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color-bg-end);
+    overscroll-behavior-y: contain;
+    height: 100%;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    overflow: hidden; /* Prevent body scroll */
 }
 
-function showLoadingState(isLoading) {
-    if(isLoading) {
-        if(charName) charName.textContent = '読み込み中...';
-        if(charProfileTextElement) charProfileTextElement.textContent = '情報を取得しています...';
-        if(startChatButton) startChatButton.disabled = true;
-        if(turnCounterElement) turnCounterElement.textContent = ''; // 読み込み中はカウンターをクリア
-        if(profileError) profileError.style.display = 'none'; // エラー表示を隠す
-    }
-    // ローディング解除時の処理は displayProfileData/displayProfileError で行う
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    overflow: hidden;
 }
 
-// --- View Switching ---
-function startChat() {
-    if(!profileView || !chatView || !userInput || !chatHistory) { console.error("Cannot switch views."); return; }
-    profileView.classList.add('hidden');
-    chatView.classList.remove('hidden');
+/* --- View Control --- */
+.hidden { display: none !important; }
 
-    // 履歴がない場合のみウェルカムメッセージを追加
-    if (!hasLoadedHistory && chatHistory.children.length === 0) {
-        appendMessage('ai', WELCOME_MESSAGE, false); // スクロールは最後に行う
-    }
-
-    // ★★★ チャット画面表示時にカウンターを更新 ★★★
-    updateTurnCounter(currentTurnCount, maxTurns);
-
-    // 画面表示後に一番下にスクロールし、入力欄にフォーカス
-    setTimeout(() => {
-        scrollToBottom(chatHistory, 'auto');
-        userInput.focus(); // ★ フォーカスを設定
-    }, 100); // 少し遅延させてレンダリングを待つ
+/* --- Shared Section Styling --- */
+.view-section {
+    width: 100%;
+    height: 100%;
+    max-width: var(--chat-container-max-width);
+    margin: 0 auto;
+    background-color: var(--color-surface);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
-// --- Event Handlers (Chat) ---
-function handleFormSubmit(event) { event.preventDefault(); sendMessage(); }
-function handleInputKeyPress(event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); } }
-
-// --- Core Logic (Chat) ---
-async function sendMessage() {
-    if (isAiResponding) return;
-    if (!characterId) { appendChatError(ERROR_MESSAGES.ID_FETCH_ERROR); return; }
-    if (!userInput) { console.error("User input element not found."); return; } // ★ input存在チェック追加
-    const userMessageText = userInput.value.trim();
-    if (userMessageText === '') return;
-
-    // ★★★ 送信前に残数チェック ★★★
-    if (maxTurns > 0 && currentTurnCount >= maxTurns) {
-        appendChatError(ERROR_MESSAGES.LIMIT_REACHED);
-        return; // 上限に達していたら送信しない
-    }
-
-    // ユーザーメッセージ追加
-    appendMessage('user', userMessageText, true);
-    userInput.value = ''; // 入力欄をクリア
-    // adjustTextareaHeight(); // 必要なら高さリセット
-    userInput.focus(); // 再度フォーカス
-
-    showTypingIndicator();
-    setAiResponding(true);
-    clearChatError();
-
-    try {
-        const response = await fetch(API_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', },
-            body: JSON.stringify({ message: userMessageText, id: characterId })
-        });
-
-        let responseData = null; // スコープを広げる
-        try {
-            responseData = await response.json(); // エラー時もJSONを先にパース試行
-            console.log("API Response Data:", responseData);
-        } catch (jsonError) {
-            console.error("Failed to parse API response JSON:", jsonError);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            } else {
-                throw new Error(ERROR_MESSAGES.API_RESPONSE);
-            }
-        }
-
-        if (!response.ok) {
-            let errorMessage = `HTTP error! status: ${response.status}`;
-            if (responseData) { // パース成功していれば詳細なエラーメッセージを使う
-                if (response.status === 403 && responseData?.code === 'LIMIT_REACHED') {
-                    errorMessage = ERROR_MESSAGES.LIMIT_REACHED;
-                    // ★★★ 上限エラーの場合、カウンターも更新 ★★★
-                    currentTurnCount = responseData.currentTurnCount ?? currentTurnCount;
-                    maxTurns = responseData.maxTurns ?? maxTurns;
-                    updateTurnCounter(currentTurnCount, maxTurns);
-                } else if (response.status === 404) {
-                    errorMessage = responseData?.error || ERROR_MESSAGES.INVALID_ID;
-                } else if (responseData?.error) {
-                    errorMessage = responseData.error;
-                }
-            }
-            throw new Error(errorMessage);
-        }
-
-        // レスポンスがOKの場合
-        if (responseData && responseData.reply) {
-            removeTypingIndicator();
-            // AI応答メッセージ追加
-            appendMessage('ai', responseData.reply, true);
-            // ★★★ 応答成功後、カウンターを更新 ★★★
-            currentTurnCount = responseData.currentTurnCount ?? currentTurnCount;
-            maxTurns = responseData.maxTurns ?? maxTurns;
-            updateTurnCounter(currentTurnCount, maxTurns);
-        } else {
-            console.warn("API response OK, but 'reply' field missing or invalid response data.", responseData);
-            removeTypingIndicator(); // ★ 応答がない場合もインジケーター削除
-            throw new Error(ERROR_MESSAGES.API_RESPONSE);
-        }
-
-    } catch (error) {
-        console.error('Error caught in sendMessage:', error);
-        removeTypingIndicator(); // ★ エラー時もインジケーター削除
-        appendChatError(error.message || ERROR_MESSAGES.GENERAL);
-    } finally {
-        setAiResponding(false);
-    }
+/* --- Profile View Styling --- */
+.profile { text-align: center; }
+.profile__header {
+    padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg);
+    flex-shrink: 0;
+    text-align: center;
+    width: 100%;
+    background-color: var(--color-surface);
+    z-index: 10;
+}
+.profile__icon {
+    width: 150px; height: 150px; border-radius: var(--border-radius-circle);
+    object-fit: cover; margin: 0 auto var(--spacing-lg) auto; border: 4px solid var(--color-surface);
+    box-shadow: var(--shadow-md); background-color: var(--color-icon-placeholder);
+}
+.profile__name {
+    font-size: 1.75rem; font-weight: var(--font-weight-bold); color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+.profile__card {
+    flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+    padding: var(--spacing-lg); padding-right: calc(var(--spacing-lg) + 6px);
+    background-color: var(--color-surface); scroll-padding-top: 10px; scroll-padding-bottom: 10px;
+    width: 100%; min-height: 0;
+}
+.profile__text {
+    font-size: 0.95rem; line-height: 1.75; color: var(--color-text-secondary);
+    white-space: pre-wrap; text-align: left;
+}
+.profile__footer {
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl); border-top: 1px solid var(--color-border);
+    flex-shrink: 0; text-align: center; width: 100%; background-color: var(--color-surface); z-index: 10;
+}
+.profile__button {
+    display: inline-block; padding: var(--spacing-sm) var(--spacing-xl); font-size: 1.05rem;
+    font-weight: var(--font-weight-medium); color: var(--color-accent-text); background-color: var(--color-accent);
+    border: none; border-radius: var(--border-radius-pill); cursor: pointer;
+    transition: background-color var(--transition-duration) ease, transform var(--transition-duration) ease;
+}
+.profile__button:hover { background-color: var(--color-accent-hover); transform: translateY(-1px); }
+.profile__button:active { transform: translateY(0px) scale(0.98); }
+.profile__button:disabled { background-color: var(--color-icon-placeholder); color: var(--color-text-secondary); cursor: not-allowed; transform: none; }
+#profile-error.error-message {
+    margin-top: var(--spacing-sm); max-width: calc(100% - 2 * var(--spacing-lg)); margin-left: auto;
+    margin-right: auto; display: block;
 }
 
 
-// --- State Management (Chat) ---
-function setAiResponding(isResponding) {
-    isAiResponding = isResponding;
-    if (sendButton) sendButton.disabled = isResponding;
-    if (userInput) userInput.disabled = isResponding;
+/* --- Chat View Styling --- */
+.chat { padding: 0; margin: 0; border-radius: inherit; }
+.chat__container {
+    width: 100%; height: 100%; background-color: var(--color-surface); border-radius: inherit;
+    position: relative; display: flex; flex-direction: column; overflow: hidden;
+    /* ★ JSで高さを変える場合、transitionを追加するとスムーズに見えることがある */
+    /* transition: height 0.2s ease-out; */
 }
 
-// --- UI Update Functions (Chat) ---
-function appendMessage(senderType, text, shouldScroll = true) {
-    if(!chatHistory) { console.error("chatHistory element not found."); return; } // ★ Nullチェック強化
-    const messageId = `${senderType}-${Date.now()}`;
-    const fragment = document.createDocumentFragment();
+/* Default (Desktop) Styles */
+.chat__header {
+    height: var(--effective-header-height); background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover));
+    color: var(--color-accent-text); display: flex; align-items: center; justify-content: space-between;
+    padding: 0 var(--spacing-lg); flex-shrink: 0; box-shadow: var(--shadow-sm); z-index: 10;
+    position: relative; width: 100%; gap: var(--spacing-md);
+}
+.chat__title {
+    font-size: 1.1rem; font-weight: var(--font-weight-medium); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; flex-grow: 1; min-width: 0;
+}
+.chat__turn-counter {
+    font-size: var(--font-size-xs); color: rgba(255, 255, 255, 0.85); white-space: nowrap; flex-shrink: 0;
+}
+.chat__turn-counter.limit-reached { color: #ffcdd2; font-weight: var(--font-weight-medium); }
 
-    // ★ senderType 'model' を 'ai' に変換
-    const effectiveSenderType = senderType === 'model' ? 'ai' : senderType;
-
-    const messageRow = createMessageRowElement(effectiveSenderType, messageId);
-    const icon = createIconElement(effectiveSenderType);
-    const content = createMessageContentElement(effectiveSenderType, text);
-
-    // --- アイコン設定 ---
-    // AIアイコン（エラー時含む）
-    if (effectiveSenderType === 'ai' || effectiveSenderType === 'error') {
-        // console.log(`[appendMessage] Setting icon for ${effectiveSenderType}. URL:`, characterIconUrl); // Debug
-        if (characterIconUrl && effectiveSenderType === 'ai') { // AIの場合のみURL画像を設定
-            icon.style.backgroundImage = `url('${characterIconUrl}')`;
-            icon.style.backgroundColor = 'transparent'; // 背景色を透明に
-        } else {
-            // URLがない場合やエラーの場合はCSSのデフォルトスタイルを使用
-            icon.style.backgroundImage = '';
-            icon.style.backgroundColor = ''; // CSSに任せる
-        }
-        // エラーアイコンは CSS (.message--error .message__icon) で設定される前提
-    }
-    // ユーザーアイコンは CSS (.message--user .message__icon) で設定される前提
-
-    // メッセージ要素の組み立て
-    if (effectiveSenderType === 'user') {
-        messageRow.appendChild(content);
-        messageRow.appendChild(icon);
-    } else { // ai または error
-        messageRow.appendChild(icon);
-        messageRow.appendChild(content);
-    }
-
-    fragment.appendChild(messageRow);
-    chatHistory.appendChild(fragment);
-
-    if (shouldScroll) {
-        // スクロール実行 ('smooth' は新しいメッセージに、'auto' は初期ロードに適する)
-        const scrollBehavior = shouldScroll === 'auto' ? 'auto' : 'smooth';
-        scrollToBottom(chatHistory, scrollBehavior);
-    }
+.chat__history {
+    flex-grow: 1; padding: var(--spacing-md) var(--spacing-lg); overflow-y: auto; scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; min-height: 0; background-color: var(--color-surface);
+    scroll-padding-bottom: var(--spacing-md); z-index: 1; position: relative; width: 100%;
+}
+.chat__footer {
+    height: var(--effective-footer-height); background-color: #f1f3f5; border-top: 1px solid var(--color-border);
+    padding: var(--spacing-sm) var(--spacing-md); flex-shrink: 0; display: flex; align-items: center;
+    z-index: 5; position: relative; width: 100%;
 }
 
 
-function createMessageRowElement(senderType, messageId) {
-    const element = document.createElement('div');
-    // クラス名は 'ai' または 'user' を基本とする
-    element.className = `message message--${senderType === 'user' ? 'user' : 'ai'}`;
-    element.dataset.messageId = messageId;
-     // エラーの場合、追加クラスを付与
-    if (senderType === 'error') {
-        element.classList.add('message--error');
+/* --- Mobile Specific Layout (LINE style) --- */
+@media (max-width: 767px) {
+    body {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        overflow: hidden;
     }
-    return element;
+    .container {
+        height: 100%;
+        height: -webkit-fill-available;
+        overflow: hidden;
+    }
+    .view-section {
+        border-radius: 0; box-shadow: none; max-width: 100%; width: 100%;
+        height: 100%; height: -webkit-fill-available; /* JSで上書きされる可能性あり */
+        position: relative; overflow: hidden;
+    }
+
+    /* Profile view mobile adjustments */
+    .profile__header {
+        position: sticky; top: 0;
+        padding-top: calc(var(--spacing-xl) + env(safe-area-inset-top));
+        padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
+        padding-bottom: var(--spacing-lg);
+    }
+    .profile__icon { width: 120px; height: 120px; margin-top: 0; }
+    .profile__name { font-size: 1.5rem; }
+    .profile__card {
+        padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
+        padding-right: calc(max(var(--spacing-lg), env(safe-area-inset-right)) + 4px);
+        scroll-padding-top: 5px; scroll-padding-bottom: 5px;
+        padding-bottom: calc(var(--effective-footer-height) + env(safe-area-inset-bottom) + var(--spacing-lg));
+        overflow-y: auto; height: auto;
+    }
+    .profile__footer {
+        position: sticky; bottom: 0;
+        padding-top: var(--spacing-md);
+        padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
+        padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+    }
+
+    /* Chat view mobile adjustments */
+    .chat__container {
+        height: 100%; /* Fill view-section */
+         /* ★ JSで高さを変更する場合、transition を追加 */
+        transition: height 0.1s ease-out;
+    }
+    .chat__header {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+        height: calc(var(--effective-header-height) + env(safe-area-inset-top));
+        padding-top: env(safe-area-inset-top);
+        padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+        padding-bottom: 0; gap: var(--spacing-sm);
+    }
+    .chat__title { font-size: 1rem; }
+
+    .chat__history {
+        padding-top: calc(var(--effective-header-height) + env(safe-area-inset-top) + var(--spacing-md));
+        padding-bottom: calc(var(--effective-footer-height) + env(safe-area-inset-bottom) + var(--spacing-md));
+        padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+        overflow-y: auto;
+        /* ★ flex-grow で高さを確保し、height: auto に変更 */
+        flex-grow: 1;
+        height: auto;
+        position: static; width: 100%;
+    }
+    .chat__footer {
+        position: fixed; /* Fix footer */
+        bottom: 0; /* ★ 初期位置 */
+        left: 0; right: 0; z-index: 100;
+        height: calc(var(--effective-footer-height) + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+        padding-top: var(--spacing-sm);
+        /* ★ JSでのbottom変更をスムーズにするためのtransition */
+        transition: bottom 0.2s ease-out;
+    }
+
+    /* Scrollbar width adjustments */
+    .profile__card::-webkit-scrollbar { width: 4px; }
+    .chat__history::-webkit-scrollbar { width: 6px; }
 }
 
-function createIconElement(senderType) {
-    const element = document.createElement('div');
-    element.className = 'message__icon';
-    // アイコンの具体的な表示（背景画像、SVGなど）はCSSまたはappendMessage内のstyleで制御
-    return element;
+/* --- Shared Input/Button Styles --- */
+.chat__input-form {
+    display: flex; align-items: center; width: 100%; height: 100%; gap: var(--spacing-sm);
+}
+.chat__input {
+    flex-grow: 1; padding: var(--spacing-sm) var(--spacing-lg); border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-pill); background-color: var(--color-surface); color: var(--color-text-primary);
+    font-size: 1rem; outline: none; transition: border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
+    -webkit-appearance: none; -moz-appearance: none; appearance: none; min-height: 38px; line-height: 1.4;
+    align-self: stretch; resize: none; overflow-y: auto; max-height: 100px;
+}
+.chat__input:focus, .chat__input:focus-visible { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2); }
+.chat__input::placeholder { color: var(--color-text-secondary); }
+.chat__send-button {
+    background-color: var(--color-accent); color: var(--color-accent-text); border: none; border-radius: var(--border-radius-circle);
+    width: 48px; height: 48px; flex-shrink: 0; cursor: pointer; display: flex; justify-content: center; align-items: center;
+    transition: background-color var(--transition-duration) ease;
+}
+.chat__send-button:hover { background-color: var(--color-accent-hover); }
+.chat__send-button:disabled { background-color: var(--color-icon-placeholder); cursor: not-allowed; }
+.chat__send-button svg { width: 24px; height: 24px; fill: currentColor; }
+
+/* --- Message Styling --- */
+.message {
+    display: flex; align-items: flex-start; margin-bottom: var(--spacing-lg); max-width: var(--message-max-width);
+    opacity: 0; animation: fadeIn var(--message-animate-duration) ease forwards;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.message__icon {
+    width: 40px; height: 40px; border-radius: var(--border-radius-circle); background-color: var(--color-icon-placeholder);
+    background-size: cover; background-position: center; background-repeat: no-repeat; flex-shrink: 0; margin-top: 0; box-shadow: var(--shadow-sm);
+}
+.message--user .message__icon { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236c757d"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'); background-color: transparent; }
+.message--error .message__icon { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23dc3545"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>'); background-color: transparent; }
+.message__content { margin: 0 var(--spacing-md); display: flex; flex-direction: column; min-width: 0; }
+.message__bubble {
+    padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius-lg); word-wrap: break-word;
+    line-height: var(--line-height-base); box-shadow: var(--shadow-sm); position: relative; max-width: 100%;
+    background-color: var(--color-ai-bubble-bg); color: var(--color-text-primary);
+}
+.message__bubble a { color: var(--link-color); text-decoration: underline; }
+.message__bubble a:hover { text-decoration: none; }
+.message__timestamp { font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: var(--spacing-xs); padding: 0 var(--spacing-sm); }
+.message--ai { margin-right: auto; }
+.message--ai .message__bubble { border-bottom-left-radius: var(--border-radius-sm); }
+.message--ai .message__timestamp { align-self: flex-start; }
+.message--user { flex-direction: row-reverse; margin-left: auto; }
+.message--user .message__content { align-items: flex-end; }
+.message--user .message__bubble { background-color: var(--color-accent); color: var(--color-accent-text); border-bottom-right-radius: var(--border-radius-sm); }
+.message--user .message__bubble a { color: inherit; text-decoration: underline; font-weight: var(--font-weight-medium); }
+.message--user .message__timestamp { align-self: flex-end; }
+.message--error .message__bubble { background-color: var(--color-error-bg); color: var(--color-error-text); border: 1px solid rgba(114, 28, 36, 0.3); font-weight: var(--font-weight-medium); border-bottom-left-radius: var(--border-radius-sm); }
+.message--error .message__timestamp { display: none; }
+
+/* Error message styling (shared) */
+.error-message {
+    color: var(--color-error-text); background-color: var(--color-error-bg); border: 1px solid rgba(114, 28, 36, 0.3);
+    padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius-md); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium);
 }
 
-function createMessageContentElement(senderType, text) {
-    const content = document.createElement('div');
-    content.className = 'message__content';
-    const bubble = document.createElement('div');
-    bubble.className = 'message__bubble';
+/* Typing Indicator */
+.typing-indicator { display: flex; align-items: center; padding: 0.6rem 0.9rem; }
+.typing-indicator__dot { height: 8px; width: 8px; background-color: var(--color-text-secondary); border-radius: 50%; display: inline-block; margin: 0 2px; animation: bounce 1.3s infinite ease-in-out both; }
+.typing-indicator__dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator__dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-indicator__dot:nth-child(3) { animation-delay: -0.0s; }
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
-    // テキスト処理: 改行を<br>に、Markdownリンクを<a>に変換
-    const processedText = text.replaceAll('\n', '<br>');
-    const linkRegex = /\[([^\]]+)]\((https?:\/\/[^\s)]+)\)/g;
+/* Scrollbar Styling (Webkit) - Light Theme */
+.chat__history::-webkit-scrollbar { width: 8px; }
+.chat__history::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+.chat__history::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
+.chat__history::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
+.profile__card::-webkit-scrollbar { width: 6px; }
+.profile__card::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+.profile__card::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+.profile__card::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
 
-    // エラーメッセージ以外でリンクパターンがあれば変換
-    if (senderType !== 'error' && linkRegex.test(processedText)) {
-         bubble.innerHTML = processedText.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-    } else {
-         // innerHTML を使って <br> を解釈させる
-         bubble.innerHTML = processedText;
-    }
-
-    content.appendChild(bubble);
-
-    // エラーメッセージ以外にタイムスタンプを追加
-    if (senderType !== 'error') {
-        const timestamp = document.createElement('div');
-        timestamp.className = 'message__timestamp';
-        timestamp.textContent = getCurrentTime();
-        content.appendChild(timestamp);
-    }
-    return content;
-}
-
-
-function showTypingIndicator() {
-    if (typingIndicatorId || !chatHistory) return; // 既に表示中か、履歴要素がなければ何もしない
-
-    const messageId = `typing-${Date.now()}`;
-    typingIndicatorId = messageId; // IDを保存
-
-    const fragment = document.createDocumentFragment();
-    // 'ai' タイプとしてインジケーターを表示
-    const messageRow = createMessageRowElement('ai', messageId);
-    const icon = createIconElement('ai');
-
-    // AIアイコンを設定 (URLがあれば)
-    if (characterIconUrl) {
-        icon.style.backgroundImage = `url('${characterIconUrl}')`;
-        icon.style.backgroundColor = 'transparent';
-    } else {
-        icon.style.backgroundImage = ''; // CSSのデフォルトに任せる
-        icon.style.backgroundColor = '';
-    }
-
-    // タイピングアニメーションを含むコンテンツを作成
-    const content = document.createElement('div'); content.className = 'message__content';
-    const bubble = document.createElement('div'); bubble.className = 'message__bubble';
-    const indicator = document.createElement('div'); indicator.className = 'typing-indicator';
-    indicator.innerHTML = `<span class="typing-indicator__dot"></span><span class="typing-indicator__dot"></span><span class="typing-indicator__dot"></span>`;
-    bubble.appendChild(indicator); content.appendChild(bubble);
-
-    // 要素を組み立てて追加
-    messageRow.appendChild(icon); messageRow.appendChild(content);
-    fragment.appendChild(messageRow); chatHistory.appendChild(fragment);
-
-    // 表示されたインジケーターが見えるようにスクロール
-    scrollToBottom(chatHistory, 'smooth');
-}
-
-function removeTypingIndicator() {
-    if (typingIndicatorId && chatHistory) {
-        const indicatorElement = chatHistory.querySelector(`[data-message-id="${typingIndicatorId}"]`);
-        if (indicatorElement) { indicatorElement.remove(); }
-        typingIndicatorId = null; // IDをクリア
-    }
-}
-
-function appendChatError(message) {
-    console.log("Appending chat error:", message); // エラー内容をログ出力
-    if (chatHistory) {
-        removeTypingIndicator(); // タイピング中なら消す
-        // 'error' タイプでメッセージを追加
-        appendMessage('error', message, true); // スクロールして表示
-    } else {
-        // チャット履歴要素がない場合のフォールバック
-        console.error("Chat history element not found, cannot append error:", message);
-        if(profileError) { // プロファイルのエラー表示領域を使う
-            profileError.textContent = `チャットエラー: ${message}`;
-            profileError.style.display = 'block';
-        }
-    }
-}
-
-
-function clearChatError() {
-    if(chatHistory) {
-        const errorMessages = chatHistory.querySelectorAll('.message--error');
-        errorMessages.forEach(el => el.remove()); // エラーメッセージ要素を削除
-    }
-}
-
-// --- ★★★ 残り回数更新関数 ★★★ ---
-function updateTurnCounter(currentCount, maxCount) {
-    if (!turnCounterElement) {
-        console.warn("Turn counter element not found.");
-        return;
-    }
-    // maxCount が 0 または未定義の場合はカウンターを表示しない
-    if (maxCount <= 0) {
-        turnCounterElement.textContent = '';
-        turnCounterElement.classList.remove('limit-reached'); // スタイルもリセット
-        return;
-    }
-
-    // 残り送信可能回数（ユーザーが次に送信できる回数）で表示
-    const remainingMessages = Math.max(0, maxCount - currentCount);
-    turnCounterElement.textContent = `残チャット ${remainingMessages} 回`;
-
-    // 上限に達したらスタイルを変更
-    if (remainingMessages <= 0) {
-        turnCounterElement.classList.add('limit-reached');
-    } else {
-        turnCounterElement.classList.remove('limit-reached');
-    }
-    // console.log(`Turn counter updated: Current=${currentCount}, Max=${maxCount}, RemainingMsg=${remainingMessages}`); // Debug
-}
-
-
-// --- Utility Functions ---
-function getCurrentTime() {
-    return new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
-function getUniqueIdFromUrl() {
-    try {
-        const params = new URLSearchParams(window.location.search);
-        const potentialId = params.get('char_id') || params.get('id');
-        // console.log("Extracted Character ID:", potentialId); // Debug
-        if (!potentialId) {
-             console.error("URL parameter 'char_id' or 'id' not found.");
-             return null;
-        }
-        return potentialId.trim() || null; // 空白除去して返す
-    } catch (e) {
-        console.error("Error extracting Character ID from URL:", e);
-        return null;
-    }
-}
-
-// スクロール関数：要素を一番下にスクロールする
-function scrollToBottom(element, behavior = 'smooth') {
-    if (element) {
-        // scrollTop に scrollHeight を設定するのが最も単純で広く動作する
-        element.scrollTop = element.scrollHeight;
-        // behavior 引数は scrollIntoView や scrollTo で有効だが、
-        // scrollTop への直接代入では無視される。アニメーションが必要な場合は別の方法を検討。
-        // element.scrollTo({ top: element.scrollHeight, behavior: behavior });
-    }
-}
-
-
-// --- ★★★ Visual Viewport Handling for Keyboard (追加) ★★★ ---
-function setupVisualViewportListener() {
-    // 必要な要素とAPIの存在チェック
-    if (!window.visualViewport || !userInput || !chatContainer || !chatFooter || !chatHistory || !chatHeader) {
-        console.warn('VisualViewport API or necessary elements not available for keyboard handling.');
-        return;
-    }
-
-    // 初期スタイルを保存するための変数を関数スコープ内に移動
-    // (DOMContentLoaded より後、リスナー設定時に取得)
-    initialContainerHeightStyle = chatContainer.style.height || '';
-    initialFooterBottomStyle = chatFooter.style.bottom || '';
-    let isAdjusting = false; // 調整中の多重実行を防ぐフラグ
-
-    const adjustLayoutForKeyboard = () => {
-        // requestAnimationFrame を使って描画タイミングに合わせる（カクつき軽減）
-        window.requestAnimationFrame(() => {
-            if (isAdjusting) return; // 調整中なら何もしない
-            isAdjusting = true;
-
-            const vv = window.visualViewport;
-            const windowHeight = window.innerHeight;
-            // visualViewport の高さを使うのが基本
-            const availableHeight = vv.height;
-
-            console.log(`Adjusting Layout - WindowH: ${windowHeight}, VV H: ${availableHeight}, VV OffsetTop: ${vv.offsetTop}`); // Debug
-
-            // コンテナの高さを visualViewport の高さに設定
-            chatContainer.style.height = `${availableHeight}px`;
-
-            // フッターの位置を調整
-            // キーボードが表示されている領域を避けるように bottom を設定
-            // windowHeight - availableHeight がキーボードが表示されている高さに近い
-            const footerBottomOffset = windowHeight - availableHeight;
-            chatFooter.style.bottom = `${footerBottomOffset}px`;
-
-            // フッターの位置調整後にスクロール（フッターが動いた後にスクロール）
-             setTimeout(() => scrollToBottom(chatHistory, 'auto'), 0);
-
-            // フラグをリセット
-             isAdjusting = false;
-        });
-    };
-
-    const resetLayout = () => {
-         window.requestAnimationFrame(() => {
-            if (isAdjusting) return;
-            isAdjusting = true;
-
-            console.log("Resetting Layout"); // Debug
-
-            // スタイルを初期値（style属性に設定されていた値 or 空文字）に戻す
-            chatContainer.style.height = initialContainerHeightStyle;
-            chatFooter.style.bottom = initialFooterBottomStyle;
-
-            isKeyboardOpen = false; // フラグをリセット
-
-            isAdjusting = false;
-        });
-    };
-
-    userInput.addEventListener('focus', () => {
-        console.log("Input focused.");
-        isKeyboardOpen = true;
-        // 初期スタイルを保存（フォーカス時に毎回保存し直す）
-        initialContainerHeightStyle = chatContainer.style.height || '';
-        initialFooterBottomStyle = chatFooter.style.bottom || '';
-        // 調整実行（resizeイベントを待たずに試みる）
-        adjustLayoutForKeyboard();
-    });
-
-    userInput.addEventListener('blur', () => {
-        console.log("Input blurred.");
-        // 即時リセットはせず、isKeyboardOpenフラグのみ更新
-        isKeyboardOpen = false;
-        // Androidでキーボード閉じずにblurする場合があるので、
-        // ここでリセットすると問題が起きやすい。resizeイベントに任せる。
-    });
-
-    window.visualViewport.addEventListener('resize', () => {
-        const vv = window.visualViewport;
-        const windowHeight = window.innerHeight;
-        // 画面下部に固定されているフッターの高さを取得 (safe-area含む)
-        const footerComputedHeight = chatFooter.offsetHeight;
-        // キーボードが出ているかの判断：visualViewportの高さがwindowの高さからフッターの高さを引いたものより小さいか
-        // 少し余裕を持たせる
-        const keyboardThreshold = windowHeight - footerComputedHeight - 50; // フッターの高さ＋αより小さくなったらキーボードが出たと判断
-
-        console.log(`Viewport Resized - VV H: ${vv.height}, Threshold: ${keyboardThreshold}, isKeyboardOpen: ${isKeyboardOpen}`); // Debug
-
-        // キーボードが開いた、またはサイズが変わった場合
-        if (vv.height < keyboardThreshold && isKeyboardOpen) {
-            console.log("Keyboard detected open/resized via resize.");
-            adjustLayoutForKeyboard();
-        }
-        // キーボードが閉じた、または小さくなった場合
-        else if (vv.height >= keyboardThreshold && !isKeyboardOpen) { // blurで isKeyboardOpen が false になっていることを利用
-             // レイアウトが変更されたままならリセット
-            if (chatContainer.style.height !== initialContainerHeightStyle || chatFooter.style.bottom !== initialFooterBottomStyle) {
-                console.log("Keyboard detected closed via resize, resetting layout.");
-                resetLayout();
-            }
-        }
-    });
-}
-
-// Optional: Function to adjust textarea height dynamically
-// function adjustTextareaHeight() {
-//   if (!userInput) return;
-//   userInput.style.height = 'auto'; // Reset height
-//   const maxHeight = parseInt(window.getComputedStyle(userInput).maxHeight, 10) || 100;
-//   const newHeight = Math.min(userInput.scrollHeight, maxHeight);
-//   userInput.style.height = newHeight + 'px';
-// }
+/* Mobile scrollbar styles are inside the @media query */
