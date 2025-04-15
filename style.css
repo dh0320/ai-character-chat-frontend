@@ -1,4 +1,4 @@
-/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応 & 回り込み改善 & 上下端張り付き対応 & 残り回数表示対応) */
+/* style.css (レイアウト再々修正版 - モバイル表示修正 & プロフィール画面固定スクロール対応 & 回り込み改善 & 上下端張り付き対応 & 残り回数表示対応 & ★ヘッダー重なり修正) */
 
 /* --- Google Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -172,12 +172,12 @@ body {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding: var(--spacing-lg);
-    padding-right: calc(var(--spacing-lg) + 6px);
+    padding-right: calc(var(--spacing-lg) + 6px); /* スクロールバー用 */
     background-color: var(--color-surface);
     scroll-padding-top: 10px;
     scroll-padding-bottom: 10px;
     width: 100%;
-    min-height: 0;
+    min-height: 0; /* flexアイテムが縮小できるように */
 }
 .profile__text {
     font-size: 0.95rem;
@@ -260,51 +260,56 @@ body {
     padding: 0 var(--spacing-lg);
     flex-shrink: 0;
     box-shadow: var(--shadow-sm);
-    z-index: 10;
-    position: relative; /* Changed from sticky for simplicity if not needed */
+    z-index: 10; /* ヘッダーを前面に */
+    position: relative; /* デスクトップでは通常の位置 */
     width: 100%;
-    /* ▼▼▼ タイトルとカウンターを左右に配置 ▼▼▼ */
     justify-content: space-between;
-    gap: var(--spacing-md); /* タイトルとカウンターの間の最小限のスペース */
+    gap: var(--spacing-md);
 }
 .chat__title {
     font-size: 1.1rem;
     font-weight: var(--font-weight-medium);
-    /* ▼▼▼ 長い場合に省略 ▼▼▼ */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex-grow: 1; /* タイトルがスペースを取るように */
-    min-width: 0; /* flexアイテムの縮小問題を回避 */
+    flex-grow: 1;
+    min-width: 0;
 }
-/* ▼▼▼ 残り回数表示用のスタイルを追加 ▼▼▼ */
 .chat__turn-counter {
-    font-size: var(--font-size-xs); /* 小さめのフォント */
-    color: rgba(255, 255, 255, 0.85); /* ヘッダー背景に合わせて少し薄い白 */
-    white-space: nowrap; /* 改行しない */
-    flex-shrink: 0; /* 縮まないように */
+    font-size: var(--font-size-xs);
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .chat__turn-counter.limit-reached {
-    color: #ffcdd2; /* 上限到達時の色（例: 薄い赤）*/
+    color: #ffcdd2;
     font-weight: var(--font-weight-medium);
 }
-/* ▲▲▲ 残り回数表示用のスタイルを追加 ▲▲▲ */
 
 .chat__history {
-    position: relative; height: auto; width: 100%;
-    flex-grow: 1;
+    flex-grow: 1; /* Takes up remaining space */
     padding: var(--spacing-md) var(--spacing-lg);
     overflow-y: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    min-height: 0;
     background-color: var(--color-surface);
-    scroll-padding-bottom: var(--spacing-md);
-    z-index: 1;
+    scroll-padding-bottom: var(--spacing-md); /* スクロール位置調整 */
+    z-index: 1; /* ヘッダーより背面 */
+    min-height: 0; /* flexアイテムが縮小できるように */
+    position: relative; /* For stacking context (optional) */
+    width: 100%;
 }
 .chat__footer {
-    height: var(--footer-height); background-color: #f1f3f5; border-top: 1px solid var(--color-border); padding: var(--spacing-sm) var(--spacing-md);
-    flex-shrink: 0; display: flex; align-items: center; z-index: 5; position: relative; width: 100%;
+    height: var(--footer-height);
+    background-color: #f1f3f5;
+    border-top: 1px solid var(--color-border);
+    padding: var(--spacing-sm) var(--spacing-md);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    z-index: 5; /* 履歴より前面、ヘッダーより背面 */
+    position: relative; /* デスクトップでは通常の位置 */
+    width: 100%;
 }
 
 
@@ -315,7 +320,7 @@ body {
         box-shadow: none;
         max-width: 100%;
         width: 100%; /* ★ Ensure full width */
-        height: 100vh;             /* ★ Ensure full viewport height */
+        height: 100vh;        /* ★ Ensure full viewport height */
         height: -webkit-fill-available; /* ★ iOS Safari address bar handling */
         overflow: hidden;
         /* ★ Ensure no padding/margin interfering with full height */
@@ -333,6 +338,8 @@ body {
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
         padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
         padding-bottom: var(--spacing-lg);
+        position: sticky; /* Keep sticky for profile */
+        top: 0;
     }
     .profile__icon { width: 120px; height: 120px; margin-top: 0; }
     .profile__name { font-size: 1.5rem; }
@@ -349,6 +356,8 @@ body {
         padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
         padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
         padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom)); /* ★ Add safe-area inset */
+        position: sticky; /* Keep sticky for profile */
+        bottom: 0;
     }
 
     /* Chat view mobile adjustments */
@@ -357,34 +366,30 @@ body {
     .chat__header {
         position: fixed; /* Chat uses fixed positioning on mobile */
         top: 0; left: 0; right: 0;
-        z-index: 100;
+        z-index: 100; /* 最前面に */
         box-shadow: var(--shadow-sm);
         /* ★ Adjust for safe area */
         height: calc(var(--effective-header-height) + env(safe-area-inset-top));
         padding-top: env(safe-area-inset-top);
-        padding-left: max(var(--spacing-md), env(safe-area-inset-left)); /* Adjusted from lg */
-        padding-right: max(var(--spacing-md), env(safe-area-inset-right)); /* Adjusted from lg */
-        padding-bottom: 0; /* Padding is for top/bottom */
+        padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+        padding-bottom: 0;
         display: flex;
-        align-items: center; /* Re-center vertically */
-        background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover)); /* Ensure background */
-        color: var(--color-accent-text); /* Ensure text color */
-        /* ▼▼▼ モバイルでも左右に配置 ▼▼▼ */
+        align-items: center;
+        background: linear-gradient(to right, var(--color-accent), var(--color-accent-hover));
+        color: var(--color-accent-text);
         justify-content: space-between;
-        gap: var(--spacing-sm); /* モバイル用に少し狭く */
+        gap: var(--spacing-sm);
     }
     .chat__title {
-        font-size: 1rem; /* モバイル用に少し小さく */
-         /* 他の省略スタイルは継承 */
+        font-size: 1rem;
     }
-    /* ▼▼▼ モバイル用のカウンターもスタイル適用 (デスクトップと同じでOK) ▼▼▼ */
     .chat__turn-counter {
-        /* Styles inherited/same as desktop */
+        /* Styles inherited */
     }
     .chat__turn-counter.limit-reached {
-       /* Styles inherited/same as desktop */
+       /* Styles inherited */
     }
-    /* ▲▲▲ ▲▲▲ */
 
     .chat__history {
         flex-grow: 1;
@@ -392,19 +397,27 @@ body {
         -webkit-overflow-scrolling: touch;
         background-color: var(--color-surface);
         scroll-behavior: smooth;
-        z-index: 1;
-        position: static;
+        z-index: 1; /* ヘッダーより背面 */
+        position: static; /* Fixedヘッダー/フッターと組み合わせるため static に */
         width: 100%;
-        /* ★ Adjust padding for fixed header/footer AND safe areas */
-        padding-top: calc(var(--effective-header-height) + env(safe-area-inset-top) + var(--spacing-md));
+        box-sizing: border-box; /* padding を含めて計算 */
+
+        /* ▼▼▼【修正箇所】▼▼▼ */
+        /* ヘッダーの高さを確保 (safe-area分はヘッダー要素が持つため、ここでは含めない) */
+        /* ヘッダーの高さ + メッセージとの間の余白 */
+        padding-top: calc(var(--effective-header-height) + var(--spacing-md));
+        /* ▲▲▲【修正箇所】▲▲▲ */
+
+        /* フッターの高さ + safe-area + メッセージとの間の余白 */
         padding-bottom: calc(var(--effective-footer-height) + env(safe-area-inset-bottom) + var(--spacing-md));
+
         padding-left: max(var(--spacing-md), env(safe-area-inset-left));
         padding-right: max(var(--spacing-md), env(safe-area-inset-right));
     }
     .chat__footer {
         position: fixed; /* Chat uses fixed positioning on mobile */
         bottom: 0; left: 0; right: 0;
-        z-index: 100;
+        z-index: 100; /* 最前面に */
         border-top: 1px solid var(--color-border);
         background-color: #f1f3f5;
         display: flex;
@@ -437,12 +450,12 @@ body {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    min-height: 38px;
-    line-height: 1.4;
-    align-self: stretch;
-    resize: none;
-    overflow-y: auto;
-    max-height: 100px;
+    min-height: 38px; /* 最小の高さを確保 */
+    line-height: 1.4; /* Ensure consistent line height */
+    align-self: stretch; /* Stretch vertically */
+    resize: none; /* Disable manual resizing */
+    overflow-y: auto; /* Enable scroll if content exceeds max-height */
+    max-height: 100px; /* Limit expansion */
 }
 .chat__input:focus, .chat__input:focus-visible { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2); }
 .chat__input::placeholder { color: var(--color-text-secondary); }
