@@ -460,7 +460,7 @@ function updateTurnCounter(currentCount, maxCount) {
     const remainingMessages = Math.max(0, maxCount - currentCount);
 
     // ここでは「残り往復数」で表示する例
-    // turnCounterElement.textContent = `残り ${remainingTurns} 回`;
+    // turnCounterElement.textContent = `残チャット ${remainingTurns} 回`;
 
     // ここでは「残りメッセージ数」で表示する例（より直感的かもしれない）
     turnCounterElement.textContent = `残 ${remainingMessages} 回`;
