@@ -54,7 +54,7 @@ except Exception as e:
 # --- ▼▼▼ Google AI (Gemini) Setup (Secret Managerから読み込むように変更) ▼▼▼ ---
 # GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") # ← 環境変数からの取得を削除
 MODEL_NAME = "gemini-2.0-flash"
-PROJECT_ID = os.environ.get("GCP_PROJECT", None) # プロジェクトIDは環境変数から取得
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", None) # ★★★ 環境変数名を修正 ★★★
 
 gemini_model = None
 gemini_initialization_error = None
